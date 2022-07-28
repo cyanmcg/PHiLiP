@@ -163,6 +163,7 @@ template class FlowSolverCaseBase<PHILIP_DIM,2>;
 template class FlowSolverCaseBase<PHILIP_DIM,3>;
 template class FlowSolverCaseBase<PHILIP_DIM,4>;
 template class FlowSolverCaseBase<PHILIP_DIM,5>;
+template class FlowSolverCaseBase<PHILIP_DIM,6>;
 
 } // FlowSolver namespace
 } // PHiLiP namespace
