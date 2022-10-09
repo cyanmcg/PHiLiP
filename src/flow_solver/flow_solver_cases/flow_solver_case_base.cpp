@@ -33,6 +33,7 @@ std::string FlowSolverCaseBase<dim, nstate>::get_pde_string() const
     if (pde_type == PDE_enum::mhd)                  {pde_string = "mhd";}
     if (pde_type == PDE_enum::euler)                {pde_string = "euler";}
     if (pde_type == PDE_enum::navier_stokes)        {pde_string = "navier_stokes";}
+    if (pde_type == PDE_enum::eikonal)              {pde_string = "eikonal";}
     if (pde_type == PDE_enum::physics_model) {
         pde_string = "physics_model";
         // add the model name + sub model name (if applicable)
@@ -80,6 +81,7 @@ std::string FlowSolverCaseBase<dim, nstate>::get_flow_case_string() const
     if (flow_case_type == FlowCaseEnum::naca0012)                   {flow_case_string = "naca0012";}
     if (flow_case_type == FlowCaseEnum::periodic_1D_unsteady)       {flow_case_string = "periodic_1D_unsteady";}
     if (flow_case_type == FlowCaseEnum::gaussian_bump)              {flow_case_string = "gaussian_bump";}
+    if (flow_case_type == FlowCaseEnum::eikonal_wall)               {flow_case_string = "eikonal_wall";}
     
     return flow_case_string;
 }

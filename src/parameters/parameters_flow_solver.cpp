@@ -21,7 +21,8 @@ void FlowSolverParam::declare_parameters(dealii::ParameterHandler &prm)
                           " burgers_rewienski_snapshot | "
                           " periodic_1D_unsteady | "
                           " gaussian_bump | "
-                          " sshock "),
+                          " sshock | "
+                          " eikonal_wall"),
                           "The type of flow we want to simulate. "
                           "Choices are "
                           " <taylor_green_vortex | "
@@ -30,7 +31,8 @@ void FlowSolverParam::declare_parameters(dealii::ParameterHandler &prm)
                           " burgers_rewienski_snapshot | "
                           " periodic_1D_unsteady | "
                           " gaussian_bump | "
-                          " sshock>. ");
+                          " sshock | "
+                          " eikonal_wall>. ");
 
         prm.declare_entry("poly_degree", "1",
                           dealii::Patterns::Integer(0, dealii::Patterns::Integer::max_int_value),
@@ -183,9 +185,10 @@ void FlowSolverParam::parse_parameters(dealii::ParameterHandler &prm)
         else if (flow_case_type_string == "burgers_viscous_snapshot")           {flow_case_type = burgers_viscous_snapshot;}
         else if (flow_case_type_string == "burgers_rewienski_snapshot")         {flow_case_type = burgers_rewienski_snapshot;}
         else if (flow_case_type_string == "naca0012")                           {flow_case_type = naca0012;}
-        else if (flow_case_type_string == "periodic_1D_unsteady")                 {flow_case_type = periodic_1D_unsteady;}
+        else if (flow_case_type_string == "periodic_1D_unsteady")               {flow_case_type = periodic_1D_unsteady;}
         else if (flow_case_type_string == "gaussian_bump")                      {flow_case_type = gaussian_bump;}
         else if (flow_case_type_string == "sshock")                             {flow_case_type = sshock;}
+        else if (flow_case_type_string == "eikonal_wall")                       {flow_case_type = eikonal_wall;}
 
         poly_degree = prm.get_integer("poly_degree");
         
