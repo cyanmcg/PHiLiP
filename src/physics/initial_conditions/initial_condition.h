@@ -206,5 +206,22 @@ public:
     real value(const dealii::Point<dim,real> &point, const unsigned int istate = 0) const override;
 };
 
+/// Initial condition: Distance to origin.
+template <int dim, int nstate, typename real>
+class InitialConditionFunction_DistanceOrigin : public InitialConditionFunction<dim,nstate,real>
+{
+protected:
+    using dealii::Function<dim,real>::value; ///< dealii::Function we are templating on
+    
+public:
+    /// Constructor to initialize dealii::Function
+    InitialConditionFunction_DistanceOrigin()
+    : InitialConditionFunction<dim,nstate,real>()
+    {}
+
+    /// Returns zero.
+    real value(const dealii::Point<dim,real> &point, const unsigned int istate = 0) const override;
+};
+
 } // PHiLiP namespace
 #endif

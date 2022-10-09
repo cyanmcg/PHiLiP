@@ -22,7 +22,8 @@ public:
         burgers_rewienski_snapshot,
         periodic_1D_unsteady,
         gaussian_bump,
-        sshock
+        sshock,
+        eikonal_wall
         };
     FlowCaseType flow_case_type; ///< Selected FlowCaseType from the input file
 

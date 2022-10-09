@@ -172,10 +172,11 @@ void AllParameters::declare_parameters (dealii::ParameterHandler &prm)
                       " burgers_inviscid | "
                       " burgers_viscous | "
                       " burgers_rewienski | "
-                      " euler |"
-                      " mhd |"
-                      " navier_stokes |"
-                      " physics_model"),
+                      " euler | "
+                      " mhd | "
+                      " navier_stokes | "
+                      " physics_model | "
+                      " eikonal"),
                       "The PDE we want to solve. "
                       "Choices are " 
                       " <advection | " 
@@ -186,9 +187,10 @@ void AllParameters::declare_parameters (dealii::ParameterHandler &prm)
                       "  burgers_viscous | "
                       "  burgers_rewienski | "
                       "  euler | "
-                      "  mhd |"
-                      "  navier_stokes |"
-                      "  physics_model>.");
+                      "  mhd | "
+                      "  navier_stokes | "
+                      "  physics_model | "
+                      "  eikonal>.");
 
     prm.declare_entry("model_type", "large_eddy_simulation",
                       dealii::Patterns::Selection(
@@ -392,12 +394,10 @@ void AllParameters::parse_parameters (dealii::ParameterHandler &prm)
     } else if (pde_string == "euler") {
         pde_type = euler;
         nstate = dimension+2;
-    }
-    else if (pde_string == "navier_stokes") {
+    } else if (pde_string == "navier_stokes") {
         pde_type = navier_stokes;
         nstate = dimension+2;
-    }
-    else if (pde_string == "physics_model") {
+    } else if (pde_string == "physics_model") {
         pde_type = physics_model;
         if (model_type == large_eddy_simulation)
         {
@@ -408,6 +408,9 @@ void AllParameters::parse_parameters (dealii::ParameterHandler &prm)
             if(physics_model_param.RANS_model_type == Parameters::PhysicsModelParam::ReynoldsAveragedNavierStokesModel::SA_negative)
               nstate = dimension+3;
         }
+    } else if (pde_string == "eikonal") {
+        pde_type = eikonal;
+        nstate = 1;
     }
     
     pcout << "Parsing time refinement study subsection..." << std::endl;

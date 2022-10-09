@@ -232,6 +232,9 @@ InitialConditionFactory<dim,nstate, real>::create_InitialConditionFunction(
         if constexpr (dim==1 && nstate==dim)  return std::make_shared<InitialConditionFunction_1DSine<dim,nstate,real> > ();
     } else if (flow_type == FlowCaseEnum::sshock) {
         if constexpr (dim==2 && nstate==1)  return std::make_shared<InitialConditionFunction_Zero<dim,nstate,real> > ();
+    } else if (flow_type == FlowCaseEnum::eikonal_wall) {
+        //if constexpr (dim==2 && nstate==1)  return std::make_shared<InitialConditionFunction_DistanceOrigin<dim,nstate,real> > ();
+        if constexpr (dim==2 && nstate==1)  return std::make_shared<InitialConditionFunction_Zero<dim,nstate,real> > ();
     } else {
         std::cout << "Invalid Flow Case Type. You probably forgot to add it to the list of flow cases in initial_condition.cpp" << std::endl;
         std::abort();
@@ -246,6 +249,15 @@ template <int dim, int nstate, typename real>
 real InitialConditionFunction_Zero<dim, nstate, real> :: value(const dealii::Point<dim,real> &/*point*/, const unsigned int /*istate*/) const
 {
     return 0.0;
+}
+
+// ========================================================
+// DISTANCE TO ORIGIN INITIAL CONDITION
+// ========================================================
+template <int dim, int nstate, typename real>
+real InitialConditionFunction_DistanceOrigin<dim, nstate, real> :: value(const dealii::Point<dim,real> &point, const unsigned int /*istate*/) const
+{
+    return sqrt(point[0]*point[0]+point[1]*point[1]+point[2]*point[2]);
 }
 
 template class InitialConditionFunction <PHILIP_DIM, 1, double>;
