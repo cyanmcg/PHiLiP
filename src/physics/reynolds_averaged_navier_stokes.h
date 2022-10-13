@@ -77,6 +77,7 @@ public:
         const dealii::Point<dim,real> &pos,
         const std::array<real,nstate> &conservative_solution,
         const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient,
+        const std::array<dealii::Tensor<2,dim,real>,nstate> &solution_hessian,
         const dealii::types::global_dof_index cell_index) const override;
 
     /// Nondimensionalized Reynolds stress tensor, (tau^reynolds)*
@@ -212,6 +213,10 @@ protected:
 
     /// Get manufactured solution value 
     std::array<dealii::Tensor<1,dim,real>,nstate> get_manufactured_solution_gradient (
+        const dealii::Point<dim,real> &pos) const;
+
+    /// Get manufactured solution value 
+    std::array<dealii::Tensor<2,dim,real>,nstate> get_manufactured_solution_hessian (
         const dealii::Point<dim,real> &pos) const;
 
     /** Convective flux contribution to the source term

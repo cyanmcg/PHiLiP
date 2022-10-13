@@ -558,6 +558,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term_explicit(
     (void) current_cell_index;
     using doubleArray = std::array<real,nstate>;
     using ADArrayTensor1 = std::array< dealii::Tensor<1,dim,real>, nstate >;
+    using ADArrayTensor2 = std::array< dealii::Tensor<2,dim,real>, nstate >;
 
     const unsigned int n_quad_pts      = fe_values_vol.n_quadrature_points;
     const unsigned int n_soln_dofs_int     = fe_values_vol.dofs_per_cell;
@@ -574,6 +575,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term_explicit(
 
     std::vector< doubleArray > soln_at_q(n_quad_pts);
     std::vector< ADArrayTensor1 > soln_grad_at_q(n_quad_pts);
+    std::vector< ADArrayTensor2 > soln_hess_at_q(n_quad_pts);
 
     std::vector< ADArrayTensor1 > conv_phys_flux_at_q(n_quad_pts);
     std::vector< ADArrayTensor1 > diss_phys_flux_at_q(n_quad_pts);
@@ -615,6 +617,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term_explicit(
             // Interpolate solution to the face quadrature points
             soln_at_q[iquad][istate]      = 0;
             soln_grad_at_q[iquad][istate] = 0;
+            soln_hess_at_q[iquad][istate] = 0;
         }
     }
     // Interpolate solution to face
@@ -623,6 +626,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term_explicit(
               const unsigned int istate = fe_values_vol.get_fe().system_to_component_index(idof).first;
               soln_at_q[iquad][istate]      += soln_coeff[idof] * fe_values_vol.shape_value_component(idof, iquad, istate);
               soln_grad_at_q[iquad][istate] += soln_coeff[idof] * fe_values_vol.shape_grad_component(idof, iquad, istate);
+              soln_hess_at_q[iquad][istate] += soln_coeff[idof] * fe_values_vol.shape_hessian_component(idof, iquad, istate);
         }
         // Evaluate physical convective flux and source term
         conv_phys_flux_at_q[iquad] = DGBaseState<dim,nstate,real,MeshType>::pde_physics_double->convective_flux (soln_at_q[iquad]);
@@ -631,7 +635,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term_explicit(
         if(this->pde_physics_double->has_nonzero_physical_source){
             physical_source_at_q.resize(n_quad_pts);
             const dealii::Point<dim,real> points = fe_values_vol.quadrature_point(iquad);
-            physical_source_at_q[iquad] = DGBaseState<dim,nstate,real,MeshType>::pde_physics_double->physical_source_term (points,soln_at_q[iquad], soln_grad_at_q[iquad], current_cell_index);
+            physical_source_at_q[iquad] = DGBaseState<dim,nstate,real,MeshType>::pde_physics_double->physical_source_term (points, soln_at_q[iquad], soln_grad_at_q[iquad], soln_hess_at_q[iquad], current_cell_index);
         }
         if(this->all_parameters->artificial_dissipation_param.add_artificial_dissipation) {
             const ADArrayTensor1 artificial_diss_phys_flux_at_q = DGBaseState<dim,nstate,real,MeshType>::artificial_dissip->calc_artificial_dissipation_flux (soln_at_q[iquad], soln_grad_at_q[iquad], artificial_diss_coeff);
@@ -3429,6 +3433,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term(
     using Tensor1D = dealii::Tensor<1,dim,real2>;
     using Tensor2D = dealii::Tensor<2,dim,real2>;
     using ArrayTensor = std::array<Tensor1D, nstate>;
+    using ArrayTensor2 = std::array<Tensor2D, nstate>;
 
     const unsigned int n_quad_pts      = quadrature.size();
     const unsigned int n_soln_dofs     = fe_soln.dofs_per_cell;
@@ -3622,6 +3627,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term(
 
     std::vector< Array > soln_at_q(n_quad_pts);
     std::vector< ArrayTensor > soln_grad_at_q(n_quad_pts); // Tensor initialize with zeros
+    std::vector< ArrayTensor2 > soln_hess_at_q(n_quad_pts); // Tensor initialize with zeros
 
     std::vector< ArrayTensor > conv_phys_flux_at_q(n_quad_pts);
     std::vector< ArrayTensor > diss_phys_flux_at_q(n_quad_pts);
@@ -3632,6 +3638,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term(
         for (int istate=0; istate<nstate; istate++) {
             soln_at_q[iquad][istate]      = 0;
             soln_grad_at_q[iquad][istate] = 0;
+            soln_hess_at_q[iquad][istate] = 0;
         }
         for (unsigned int idof=0; idof<n_soln_dofs; ++idof) {
             const unsigned int istate = fe_soln.system_to_component_index(idof).first;
@@ -3651,7 +3658,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term(
                 const int iaxis = fe_metric.system_to_component_index(idof).first;
                 ad_points[iaxis] += coords_coeff[idof] * fe_metric.shape_value(idof,unit_quad_pts[iquad]);
             }
-            physical_source_at_q[iquad] = physics.physical_source_term (ad_points, soln_at_q[iquad], soln_grad_at_q[iquad], current_cell_index);
+            physical_source_at_q[iquad] = physics.physical_source_term (ad_points, soln_at_q[iquad], soln_grad_at_q[iquad], soln_hess_at_q[iquad], current_cell_index);
         }
 
         if (this->all_parameters->artificial_dissipation_param.add_artificial_dissipation) {

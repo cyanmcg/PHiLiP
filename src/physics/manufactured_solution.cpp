@@ -1146,6 +1146,15 @@ void ManufacturedSolutionFunction<dim,real>
         gradients[i] = gradient(p, i);
 }
 
+template <int dim, typename real>
+void ManufacturedSolutionFunction<dim,real>
+::matrix_hessian (
+    const dealii::Point<dim,real> &p,
+    std::vector<dealii::Tensor<2,dim, real> > &hessians) const
+{
+    for (unsigned int i = 0; i < nstate; ++i)
+        hessians[i] = hessian(p, i);
+}
 
 template <int dim, typename real>
 inline std::vector<real> ManufacturedSolutionFunction<dim,real>

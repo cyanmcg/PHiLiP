@@ -33,6 +33,7 @@ std::array<real,nstate> ModelBase<dim, nstate, real>
     const dealii::Point<dim,real> &/*pos*/,
     const std::array<real,nstate> &/*solution*/,
     const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/,
+    const std::array<dealii::Tensor<2,dim,real>,nstate> &/*solution_hessian*/,
     const dealii::types::global_dof_index /*cell_index*/) const
 {
     std::array<real,nstate> physical_source;

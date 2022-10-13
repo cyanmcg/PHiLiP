@@ -93,6 +93,10 @@ public:
     void vector_gradient (const dealii::Point<dim,real> &p,
                           std::vector<dealii::Tensor<1,dim, real> > &gradients) const;
 
+    /// See dealii::Function<dim,real>::vector_gradient
+    void matrix_hessian (const dealii::Point<dim,real> &p,
+                         std::vector<dealii::Tensor<2,dim, real> > &hessians) const;
+
     // Virtual functions inherited from dealii::Function
     //
     // virtual real value (const Point<dim,real> &p,
