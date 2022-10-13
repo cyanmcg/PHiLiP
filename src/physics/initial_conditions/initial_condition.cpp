@@ -257,7 +257,11 @@ real InitialConditionFunction_Zero<dim, nstate, real> :: value(const dealii::Poi
 template <int dim, int nstate, typename real>
 real InitialConditionFunction_DistanceOrigin<dim, nstate, real> :: value(const dealii::Point<dim,real> &point, const unsigned int /*istate*/) const
 {
-    return sqrt(point[0]*point[0]+point[1]*point[1]+point[2]*point[2]);
+    real distance_to_origin = 0.0;
+    for (int i=0;i<dim;++i){
+        distance_to_origin += point[i]*point[i];
+    }
+    return sqrt(distance_to_origin);
 }
 
 template class InitialConditionFunction <PHILIP_DIM, 1, double>;
