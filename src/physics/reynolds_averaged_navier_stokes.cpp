@@ -356,10 +356,11 @@ std::array<real,nstate> ReynoldsAveragedNavierStokesBase<dim,nstate,real>
         const dealii::Point<dim,real> &pos,
         const std::array<real,nstate> &conservative_soln,
         const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient,
+        const std::array<dealii::Tensor<2,dim,real>,nstate> &solution_hessian,
         const dealii::types::global_dof_index cell_index) const
 {
     (void) cell_index;
-
+    (void) solution_hessian;
     std::array<real,nstate> physical_source;
     physical_source = this->compute_production_dissipation_cross_term(pos, conservative_soln, solution_gradient);
 
@@ -576,6 +577,24 @@ std::array<dealii::Tensor<1,dim,real>,nstate> ReynoldsAveragedNavierStokesBase<d
 }
 //----------------------------------------------------------------
 template <int dim, int nstate, typename real>
+std::array<dealii::Tensor<2,dim,real>,nstate> ReynoldsAveragedNavierStokesBase<dim,nstate,real>
+::get_manufactured_solution_hessian (
+    const dealii::Point<dim,real> &pos) const
+{
+    std::vector<dealii::Tensor<2,dim,real>> manufactured_solution_hessian_dealii(nstate);
+    this->manufactured_solution_function->matrix_hessian(pos,manufactured_solution_hessian_dealii);
+    std::array<dealii::Tensor<2,dim,real>,nstate> manufactured_solution_hessian;
+    for (int s=0; s<nstate; s++) {
+        for (int d1=0;d1<dim;d1++) {
+            for (int d2=0;d2<dim;d2++) {
+                manufactured_solution_hessian[s][d1][d2] = manufactured_solution_hessian_dealii[s][d1][d2];
+            }
+        }
+    }
+    return manufactured_solution_hessian;
+}
+//----------------------------------------------------------------
+template <int dim, int nstate, typename real>
 std::array<real,nstate> ReynoldsAveragedNavierStokesBase<dim,nstate,real>
 ::convective_source_term (
     const dealii::Point<dim,real> &pos) const
@@ -692,10 +711,13 @@ std::array<real,nstate> ReynoldsAveragedNavierStokesBase<dim,nstate,real>
     
     // Get Manufactured Solution gradient
     const std::array<dealii::Tensor<1,dim,real>,nstate> manufactured_solution_gradient = get_manufactured_solution_gradient(pos); // from Euler
+
+    // Get Manufactured Solution hessian
+    const std::array<dealii::Tensor<2,dim,real>,nstate> manufactured_solution_hessian = get_manufactured_solution_hessian(pos); // from Euler
     
     std::array<real,nstate> physical_source_source_term;
     for (int i=0;i<nstate;i++){
-        physical_source_source_term = physical_source_term(pos, manufactured_solution, manufactured_solution_gradient, cell_index);
+        physical_source_source_term = physical_source_term(pos, manufactured_solution, manufactured_solution_gradient, manufactured_solution_hessian, cell_index);
     }
 
     return physical_source_source_term;

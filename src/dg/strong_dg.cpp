@@ -196,6 +196,7 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_derivatives(
     (void) compute_dRdW; (void) compute_dRdX; (void) compute_d2R;
     using ADArray = std::array<FadType,nstate>;
     using ADArrayTensor1 = std::array< dealii::Tensor<1,dim,FadType>, nstate >;
+    using ADArrayTensor2 = std::array< dealii::Tensor<2,dim,FadType>, nstate >;
 
     const unsigned int n_quad_pts      = fe_values_vol.n_quadrature_points;
     const unsigned int n_dofs_cell     = fe_values_vol.dofs_per_cell;
@@ -208,6 +209,7 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_derivatives(
 
     std::vector< ADArray > soln_at_q(n_quad_pts);
     std::vector< ADArrayTensor1 > soln_grad_at_q(n_quad_pts); // Tensor initialize with zeros
+    std::vector< ADArrayTensor2 > soln_hess_at_q(n_quad_pts); // Tensor initialize with zeros
 
     std::vector< ADArrayTensor1 > conv_phys_flux_at_q(n_quad_pts);
     std::vector< ADArrayTensor1 > diss_phys_flux_at_q(n_quad_pts);
@@ -225,6 +227,7 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_derivatives(
             // Interpolate solution to the volume quadrature points
             soln_at_q[iquad][istate]      = 0;
             soln_grad_at_q[iquad][istate] = 0;
+            soln_hess_at_q[iquad][istate] = 0;
         }
     }
     // Interpolate solution to face
@@ -233,6 +236,7 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_derivatives(
               const unsigned int istate = fe_values_vol.get_fe().system_to_component_index(idof).first;
               soln_at_q[iquad][istate]      += soln_coeff[idof] * fe_values_vol.shape_value_component(idof, iquad, istate);
               soln_grad_at_q[iquad][istate] += soln_coeff[idof] * fe_values_vol.shape_grad_component(idof, iquad, istate);
+              soln_hess_at_q[iquad][istate] += soln_coeff[idof] * fe_values_vol.shape_hessian_component(idof, iquad, istate);
         }
         //std::cout << "Density " << soln_at_q[iquad][0] << std::endl;
         //if(nstate>1) std::cout << "Momentum " << soln_at_q[iquad][1] << std::endl;
@@ -246,7 +250,7 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_derivatives(
             const dealii::Point<dim,real> real_quad_points = fe_values_vol.quadrature_point(iquad);
             dealii::Point<dim,FadType> ad_points;
             for (int d=0;d<dim;++d) { ad_points[d] = real_quad_points[d]; }
-            physical_source_at_q[iquad] = this->pde_physics_fad->physical_source_term (ad_points, soln_at_q[iquad], soln_grad_at_q[iquad], current_cell_index);
+            physical_source_at_q[iquad] = this->pde_physics_fad->physical_source_term (ad_points, soln_at_q[iquad], soln_grad_at_q[iquad], soln_hess_at_q[iquad], current_cell_index);
         }
         if(this->all_parameters->manufactured_convergence_study_param.manufactured_solution_param.use_manufactured_source_term) {
             source_at_q.resize(n_quad_pts);
@@ -536,6 +540,7 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_explicit(
     using realtype = real;
     using realArray = std::array<realtype,nstate>;
     using realArrayTensor1 = std::array< dealii::Tensor<1,dim,realtype>, nstate >;
+    using realArrayTensor2 = std::array< dealii::Tensor<2,dim,realtype>, nstate >;
 
     const unsigned int n_quad_pts      = fe_values_vol.n_quadrature_points;
     const unsigned int n_dofs_cell     = fe_values_vol.dofs_per_cell;
@@ -549,6 +554,7 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_explicit(
 
     std::vector< realArray > soln_at_q(n_quad_pts);
     std::vector< realArrayTensor1 > soln_grad_at_q(n_quad_pts); // Tensor initialize with zeros
+    std::vector< realArrayTensor2 > soln_hess_at_q(n_quad_pts); // Tensor initialize with zeros
 
     std::vector< realArrayTensor1 > conv_phys_flux_at_q(n_quad_pts);
     std::vector< realArrayTensor1 > diss_phys_flux_at_q(n_quad_pts);
@@ -565,6 +571,7 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_explicit(
             // Interpolate solution to the volume quadrature points
             soln_at_q[iquad][istate]      = 0;
             soln_grad_at_q[iquad][istate] = 0;
+            soln_hess_at_q[iquad][istate] = 0;
         }
     }
     // Interpolate solution to face
@@ -573,6 +580,7 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_explicit(
               const unsigned int istate = fe_values_vol.get_fe().system_to_component_index(idof).first;
               soln_at_q[iquad][istate]      += soln_coeff[idof] * fe_values_vol.shape_value_component(idof, iquad, istate);
               soln_grad_at_q[iquad][istate] += soln_coeff[idof] * fe_values_vol.shape_grad_component(idof, iquad, istate);
+              soln_hess_at_q[iquad][istate] += soln_coeff[idof] * fe_values_vol.shape_hessian_component(idof, iquad, istate);
         }
         //std::cout << "Density " << soln_at_q[iquad][0] << std::endl;
         //if(nstate>1) std::cout << "Momentum " << soln_at_q[iquad][1] << std::endl;
@@ -582,7 +590,7 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_explicit(
         diss_phys_flux_at_q[iquad] = DGBaseState<dim,nstate,real,MeshType>::pde_physics_double->dissipative_flux (soln_at_q[iquad], soln_grad_at_q[iquad], current_cell_index);
         if(this->pde_physics_double->has_nonzero_physical_source){
             physical_source_at_q.resize(n_quad_pts);
-            physical_source_at_q[iquad] = this->pde_physics_double->physical_source_term (fe_values_vol.quadrature_point(iquad), soln_at_q[iquad], soln_grad_at_q[iquad], current_cell_index);
+            physical_source_at_q[iquad] = this->pde_physics_double->physical_source_term (fe_values_vol.quadrature_point(iquad), soln_at_q[iquad], soln_grad_at_q[iquad], soln_hess_at_q[iquad], current_cell_index);
         }
         if(this->all_parameters->manufactured_convergence_study_param.manufactured_solution_param.use_manufactured_source_term) {
             source_at_q.resize(n_quad_pts);

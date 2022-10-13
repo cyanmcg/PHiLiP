@@ -62,14 +62,15 @@ std::array<dealii::Tensor<1,dim,real2>,nstate> Eikonal<dim,nstate,real>
     const std::array<dealii::Tensor<1,dim,real2>,nstate> &solution_gradient,
     const dealii::types::global_dof_index cell_index) const
 {
-    (void) conservative_soln;
-    (void) solution_gradient;
     (void) cell_index;
     std::array<dealii::Tensor<1,dim,real2>,nstate> diss_flux;
-    // No dissipative flux for Eikonal
+
     for (int flux_dim=0; flux_dim<nstate; ++flux_dim) {
-        diss_flux[flux_dim] = 0.0;
+        for (int d=0; d<dim; ++d){
+            diss_flux[flux_dim][d] = conservative_soln[flux_dim]*solution_gradient[flux_dim][d];
+        }
     }
+
     return diss_flux;
 }
 //----------------------------------------------------------------
@@ -79,18 +80,19 @@ std::array<real,nstate> Eikonal<dim,nstate,real>
     const dealii::Point<dim,real> &pos,
     const std::array<real,nstate> &conservative_soln,
     const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient,
+    const std::array<dealii::Tensor<2,dim,real>,nstate> &solution_hessian,
     const dealii::types::global_dof_index cell_index) const
 {
     (void) pos;
     (void) cell_index;
-    (void) conservative_soln;
+    (void) solution_gradient;
     std::array<real,nstate> physical_source;
     for (int i=0; i<nstate; i++) {
         physical_source[i] = 0.0;
         for (int j=0;j<dim;j++){
-            physical_source[i] += solution_gradient[i][j]*solution_gradient[i][j];
+            physical_source[i] += solution_hessian[i][j][j];
         }
-        physical_source[i] = 1.0-sqrt(physical_source[i]);
+        physical_source[i] = 1.0+conservative_soln[i]*physical_source[i];
     }
     return physical_source;
 }
@@ -142,6 +144,24 @@ std::array<dealii::Tensor<1,dim,real>,nstate> Eikonal<dim,nstate,real>
         }
     }
     return manufactured_solution_gradient;
+}
+//----------------------------------------------------------------
+template <int dim, int nstate, typename real>
+std::array<dealii::Tensor<2,dim,real>,nstate> Eikonal<dim,nstate,real>
+::get_manufactured_solution_hessian (
+    const dealii::Point<dim,real> &pos) const
+{
+    std::vector<dealii::Tensor<2,dim,real>> manufactured_solution_hessian_dealii(nstate);
+    this->manufactured_solution_function->matrix_hessian(pos,manufactured_solution_hessian_dealii);
+    std::array<dealii::Tensor<2,dim,real>,nstate> manufactured_solution_hessian;
+    for (int s=0; s<nstate; s++) {
+        for (int d1=0;d1<dim;d1++) {
+            for (int d2=0;d2<dim;d2++) {
+                manufactured_solution_hessian[s][d1][d2] = manufactured_solution_hessian_dealii[s][d1][d2];
+            }
+        }
+    }
+    return manufactured_solution_hessian;
 }
 //----------------------------------------------------------------
 template <int dim, int nstate, typename real>
@@ -393,10 +413,13 @@ std::array<real,nstate> Eikonal<dim,nstate,real>
     
     // Get Manufactured Solution gradient
     const std::array<dealii::Tensor<1,dim,real>,nstate> manufactured_solution_gradient = get_manufactured_solution_gradient(pos); // from Euler
+
+    // Get Manufactured Solution gradient
+    const std::array<dealii::Tensor<2,dim,real>,nstate> manufactured_solution_hessian = get_manufactured_solution_hessian(pos); // from Euler
     
     std::array<real,nstate> physical_source_source_term;
     for (int i=0;i<nstate;i++){
-        physical_source_source_term = physical_source_term(pos, manufactured_solution, manufactured_solution_gradient, cell_index);
+        physical_source_source_term = physical_source_term(pos, manufactured_solution, manufactured_solution_gradient, manufactured_solution_hessian, cell_index);
     }
 
     return physical_source_source_term;
