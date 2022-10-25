@@ -148,6 +148,7 @@ protected:
 
     /// Wall boundary condition
     void boundary_wall (
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
         std::array<real,nstate> &soln_bc,
         std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const;
 
