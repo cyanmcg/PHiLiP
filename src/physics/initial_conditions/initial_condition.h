@@ -206,16 +206,16 @@ public:
     real value(const dealii::Point<dim,real> &point, const unsigned int istate = 0) const override;
 };
 
-/// Initial condition: Distance to origin.
+/// Initial condition: Distance to target.
 template <int dim, int nstate, typename real>
-class InitialConditionFunction_DistanceOrigin : public InitialConditionFunction<dim,nstate,real>
+class InitialConditionFunction_DistanceTarget : public InitialConditionFunction<dim,nstate,real>
 {
 protected:
     using dealii::Function<dim,real>::value; ///< dealii::Function we are templating on
     
 public:
     /// Constructor to initialize dealii::Function
-    InitialConditionFunction_DistanceOrigin()
+    InitialConditionFunction_DistanceTarget()
     : InitialConditionFunction<dim,nstate,real>()
     {}
 

@@ -464,12 +464,14 @@ real Eikonal<dim,nstate,real>
 template <int dim, int nstate, typename real>
 void Eikonal<dim,nstate,real>
 ::boundary_wall (
+   const std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_int*/,
    std::array<real,nstate> &soln_bc,
    std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
 {
     for (int istate=0; istate<nstate; ++istate) {
         soln_bc[istate] = 0.0;
         soln_grad_bc[istate] = 0.0;
+        //soln_grad_bc[istate] = soln_grad_int[istate];
     }
 }
 //----------------------------------------------------------------
@@ -503,7 +505,7 @@ void Eikonal<dim,nstate,real>
     } 
     else if (boundary_type == 1001) {
         // Wall boundary condition 
-        boundary_wall (soln_bc,soln_grad_bc);
+        boundary_wall (soln_grad_int,soln_bc,soln_grad_bc);
     } 
     else if (boundary_type == 1002) {
         // Pressure outflow boundary condition 

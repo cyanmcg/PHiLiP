@@ -3452,6 +3452,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term(
     if (compute_metric_derivatives) metric_jacobian = evaluate_metric_jacobian ( points, coords_coeff, fe_metric);
     std::vector<real2> jac_det(n_quad_pts);
     std::vector<Tensor2D> jac_inv_tran(n_quad_pts);
+    std::vector<Tensor2D> jac_inv(n_quad_pts);
     for (unsigned int iquad=0; iquad<n_quad_pts; ++iquad) {
 
         if (compute_metric_derivatives) {
@@ -3460,6 +3461,9 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term(
 
             const Tensor2D jacobian_transpose_inverse = dealii::transpose(dealii::invert(metric_jacobian[iquad]));
             jac_inv_tran[iquad] = jacobian_transpose_inverse;
+
+            const Tensor2D jacobian_inverse = dealii::invert(metric_jacobian[iquad]);
+            jac_inv[iquad] = jacobian_inverse;
         } else {
             jac_det[iquad] = fe_values_vol.JxW(iquad) / quadrature.weight(iquad);
         }
@@ -3564,6 +3568,49 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term(
              }
          }
      }
+    std::array<std::array<dealii::FullMatrix<real2>,dim>,dim> hessian_operator;
+    for (int dr=0;dr<dim;++dr) {
+        for (int dc=0;dc<dim;++dc) {
+            hessian_operator[dr][dc].reinit(dealii::TableIndices<2>(n_soln_dofs, n_quad_pts));
+        }
+    }
+    for (unsigned int idof=0; idof<n_soln_dofs; ++idof) {
+         for (unsigned int iquad=0; iquad<n_quad_pts; ++iquad) {
+             if (compute_metric_derivatives) {
+                 const dealii::Tensor<2,dim,real2> ref_shape_hess = fe_soln.shape_grad_grad(idof,points[iquad]);
+                 dealii::Tensor<2,dim,real2> phys_shape_hess_t;
+                 for (int dr=0;dr<dim;++dr) {
+                     for (int dc=0;dc<dim;++dc) {
+                         phys_shape_hess_t[dr][dc] = 0.0;
+                         for (int k=0;k<dim;++k) {
+                             phys_shape_hess_t[dr][dc] += jac_inv_tran[iquad][dr][k] * ref_shape_hess[k][dc];
+                         }
+                     }
+                 }
+                 dealii::Tensor<2,dim,real2> phys_shape_hess;
+                 for (int dr=0;dr<dim;++dr) {
+                     for (int dc=0;dc<dim;++dc) {
+                         phys_shape_hess[dr][dc] = 0.0;
+                         for (int k=0;k<dim;++k) {
+                             phys_shape_hess[dr][dc] += phys_shape_hess_t[dr][k] * jac_inv[iquad][k][dc];
+                         }
+                     }
+                 }
+                 for (int dr=0;dr<dim;++dr) {
+                     for (int dc=0;dc<dim;++dc) {
+                         hessian_operator[dr][dc][idof][iquad] = phys_shape_hess[dr][dc];
+                     }
+                 }
+             } else {
+                 for (int dr=0;dr<dim;++dr) {
+                     for (int dc=0;dc<dim;++dc) {
+                         const unsigned int istate = fe_soln.system_to_component_index(idof).first;
+                         hessian_operator[dr][dc][idof][iquad] = fe_values_vol.shape_hessian_component(idof, iquad, istate)[dr][dc];
+                     }
+                 }
+             }
+         }
+     }
 
 
 
@@ -3642,9 +3689,14 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term(
         }
         for (unsigned int idof=0; idof<n_soln_dofs; ++idof) {
             const unsigned int istate = fe_soln.system_to_component_index(idof).first;
-            soln_at_q[iquad][istate]      += soln_coeff[idof] * interpolation_operator[idof][iquad];
+            soln_at_q[iquad][istate] += soln_coeff[idof] * interpolation_operator[idof][iquad];
             for (int d=0;d<dim;++d) {
                 soln_grad_at_q[iquad][istate][d] += soln_coeff[idof] * gradient_operator[d][idof][iquad];
+            }
+            for (int dr=0;dr<dim;++dr) {
+                for (int dc=0;dc<dim;++dc) {
+                    soln_hess_at_q[iquad][istate][dr][dc] += soln_coeff[idof] * hessian_operator[dr][dc][idof][iquad];
+                }
             }
         }
         conv_phys_flux_at_q[iquad] = physics.convective_flux (soln_at_q[iquad]);
