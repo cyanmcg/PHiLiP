@@ -24,22 +24,32 @@ Eikonal<dim,nstate,real>::Eikonal (
 template <int dim, int nstate, typename real>
 std::array<dealii::Tensor<1,dim,real>,nstate> Eikonal<dim,nstate,real>
 ::convective_flux (
-    const std::array<real,nstate> &conservative_soln) const
+    const std::array<real,nstate> &conservative_soln,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient) const
 {
-    return convective_flux_templated<real>(conservative_soln);
+    return convective_flux_templated<real>(conservative_soln,solution_gradient);
 }
 //----------------------------------------------------------------
 template <int dim, int nstate, typename real>
 template <typename real2>
 std::array<dealii::Tensor<1,dim,real2>,nstate> Eikonal<dim,nstate,real>
 ::convective_flux_templated (
-    const std::array<real2,nstate> &conservative_soln) const
+    const std::array<real2,nstate> &conservative_soln,
+    const std::array<dealii::Tensor<1,dim,real2>,nstate> &solution_gradient) const
 {
-    (void) conservative_soln;
+    //(void) conservative_soln;
+    //std::array<dealii::Tensor<1,dim,real2>,nstate> conv_flux;
+    //// No convective flux for Eikonal
+    //for (int flux_dim=0; flux_dim<nstate; ++flux_dim) {
+    //    conv_flux[flux_dim] = 0.0;
+    //}
+    //return conv_flux;
     std::array<dealii::Tensor<1,dim,real2>,nstate> conv_flux;
-    // No convective flux for Eikonal
-    for (int flux_dim=0; flux_dim<nstate; ++flux_dim) {
-        conv_flux[flux_dim] = 0.0;
+    const dealii::Tensor<1,dim,real2> vel = compute_velocities<real2>(solution_gradient);
+    for (int s=0; s<nstate; ++s) {
+        for (int flux_dim=0; flux_dim<dim; ++flux_dim) {
+            conv_flux[s][flux_dim] = conservative_soln[s]*vel[flux_dim];
+        }
     }
     return conv_flux;
 }
@@ -62,13 +72,23 @@ std::array<dealii::Tensor<1,dim,real2>,nstate> Eikonal<dim,nstate,real>
     const std::array<dealii::Tensor<1,dim,real2>,nstate> &solution_gradient,
     const dealii::types::global_dof_index cell_index) const
 {
+    //(void) cell_index;
+    //std::array<dealii::Tensor<1,dim,real2>,nstate> diss_flux;
+
+    //for (int flux_dim=0; flux_dim<nstate; ++flux_dim) {
+    //    for (int d=0; d<dim; ++d){
+    //        diss_flux[flux_dim][d] = conservative_soln[flux_dim]*solution_gradient[flux_dim][d];
+    //    }
+    //}
+
+    //return diss_flux;
+    (void) conservative_soln;
+    (void) solution_gradient;
     (void) cell_index;
     std::array<dealii::Tensor<1,dim,real2>,nstate> diss_flux;
 
     for (int flux_dim=0; flux_dim<nstate; ++flux_dim) {
-        for (int d=0; d<dim; ++d){
-            diss_flux[flux_dim][d] = conservative_soln[flux_dim]*solution_gradient[flux_dim][d];
-        }
+        diss_flux[flux_dim] = 0.0;
     }
 
     return diss_flux;
@@ -179,7 +199,7 @@ std::array<real,nstate> Eikonal<dim,nstate,real>
     for (int d=0;d<dim;d++) {
         dealii::Tensor<1,dim,real> normal;
         normal[d] = 1.0;
-        const dealii::Tensor<2,nstate,real> jacobian = convective_flux_directional_jacobian(manufactured_solution, normal);
+        const dealii::Tensor<2,nstate,real> jacobian = convective_flux_directional_jacobian(manufactured_solution, manufactured_solution_gradient, normal);
 
         for (int sr = 0; sr < nstate; ++sr) {
             real jac_grad_row = 0.0;
@@ -221,19 +241,24 @@ template <int dim, int nstate, typename real>
 dealii::Tensor<2,nstate,real> Eikonal<dim,nstate,real>
 ::convective_flux_directional_jacobian (
     const std::array<real,nstate> &conservative_soln,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient,
     const dealii::Tensor<1,dim,real> &normal) const
 {
     using adtype = FadType;
 
     // Initialize AD objects
     std::array<adtype,nstate> AD_conservative_soln;
+    std::array<dealii::Tensor<1,dim,adtype>,nstate> AD_solution_gradient;
     for (int s=0; s<nstate; s++) {
         adtype ADvar(nstate, s, getValue<real>(conservative_soln[s])); // create AD variable
         AD_conservative_soln[s] = ADvar;
+        for (int d=0;d<dim;d++) {
+            AD_solution_gradient[s][d] = getValue<real>(solution_gradient[s][d]);
+        }
     }
 
     // Compute AD convective flux
-    std::array<dealii::Tensor<1,dim,adtype>,nstate> AD_convective_flux = convective_flux_templated<adtype>(AD_conservative_soln);
+    std::array<dealii::Tensor<1,dim,adtype>,nstate> AD_convective_flux = convective_flux_templated<adtype>(AD_conservative_soln,AD_solution_gradient);
 
     // Assemble the directional Jacobian
     dealii::Tensor<2,nstate,real> jacobian;
@@ -440,23 +465,56 @@ std::array<dealii::Tensor<1,dim,real>,nstate> Eikonal<dim, nstate, real>
 }
 //----------------------------------------------------------------
 template <int dim, int nstate, typename real>
+template <typename real2>
+dealii::Tensor<1,dim,real2> Eikonal<dim,nstate,real>
+::compute_velocities (
+    const std::array<dealii::Tensor<1,dim,real2>,nstate> &solution_gradient) const
+{
+    dealii::Tensor<1,dim,real2> vel;
+    for (int d=0; d<dim; ++d) { vel[d] = solution_gradient[0][d]; }
+    return vel;
+}
+//----------------------------------------------------------------
+template <int dim, int nstate, typename real>
+template <typename real2>
+real2 Eikonal<dim,nstate,real>
+::compute_velocity_squared (
+    const dealii::Tensor<1,dim,real2> &velocities) const
+{
+    real2 vel2 = 0.0;
+    for (int d=0; d<dim; d++) { 
+        vel2 += velocities[d]*velocities[d]; 
+    }    
+    return vel2;
+}
+//----------------------------------------------------------------
+template <int dim, int nstate, typename real>
 std::array<real,nstate> Eikonal<dim,nstate,real>
 ::convective_eigenvalues (
     const std::array<real,nstate> &/*conservative_soln*/,
-    const dealii::Tensor<1,dim,real> &/*normal*/) const
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient,
+    const dealii::Tensor<1,dim,real> &normal) const
 {
+    const dealii::Tensor<1,dim,real> vel = compute_velocities<real>(solution_gradient);
     std::array<real,nstate> eig;
+    real vel_dot_n = 0.0;
+    for (int d=0;d<dim;++d) { vel_dot_n += vel[d]*normal[d]; };
     for (int i=0; i<nstate; i++) {
-        eig[i] = 0.0;
+        eig[i] = vel_dot_n;
     }
     return eig;
 }
 //----------------------------------------------------------------
 template <int dim, int nstate, typename real>
 real Eikonal<dim,nstate,real>
-::max_convective_eigenvalue (const std::array<real,nstate> &/*conservative_soln*/) const
+::max_convective_eigenvalue (
+    const std::array<real,nstate> &/*conservative_soln*/,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient) const
 {
-    const real max_eig = 0.0;
+    const dealii::Tensor<1,dim,real> vel = compute_velocities<real>(solution_gradient);
+    real vel2 = compute_velocity_squared<real>(vel);
+
+    const real max_eig = sqrt(vel2);
 
     return max_eig;
 }

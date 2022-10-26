@@ -466,7 +466,8 @@ compute_mean_specific_energy(const std::array<real,nstate> &conservative_soln1,
 
 template <int dim, int nstate, typename real>
 std::array<dealii::Tensor<1,dim,real>,nstate> Euler<dim,nstate,real>
-::convective_flux (const std::array<real,nstate> &conservative_soln) const
+::convective_flux (const std::array<real,nstate> &conservative_soln,
+                   const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const
 {
     std::array<dealii::Tensor<1,dim,real>,nstate> conv_flux;
     const real density = conservative_soln[0];
@@ -567,6 +568,7 @@ template <int dim, int nstate, typename real>
 std::array<real,nstate> Euler<dim,nstate,real>
 ::convective_eigenvalues (
     const std::array<real,nstate> &conservative_soln,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/,
     const dealii::Tensor<1,dim,real> &normal) const
 {
     const dealii::Tensor<1,dim,real> vel = compute_velocities<real>(conservative_soln);
@@ -585,7 +587,9 @@ std::array<real,nstate> Euler<dim,nstate,real>
 
 template <int dim, int nstate, typename real>
 real Euler<dim,nstate,real>
-::max_convective_eigenvalue (const std::array<real,nstate> &conservative_soln) const
+::max_convective_eigenvalue (
+    const std::array<real,nstate> &conservative_soln,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const
 {
     const dealii::Tensor<1,dim,real> vel = compute_velocities<real>(conservative_soln);
 
@@ -777,7 +781,7 @@ void Euler<dim,nstate,real>
     std::array<real,nstate> primitive_boundary_values = convert_conservative_to_primitive<real>(conservative_boundary_values);
     for (int istate=0; istate<nstate; ++istate) {
 
-        std::array<real,nstate> characteristic_dot_n = convective_eigenvalues(conservative_boundary_values, normal_int);
+        std::array<real,nstate> characteristic_dot_n = convective_eigenvalues(conservative_boundary_values, boundary_gradients, normal_int);
         const bool inflow = (characteristic_dot_n[istate] <= 0.);
 
         if (inflow) { // Dirichlet boundary condition

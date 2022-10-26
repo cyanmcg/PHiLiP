@@ -130,7 +130,7 @@ void PeriodicTurbulence<dim, nstate>::compute_and_update_integrated_quantities(D
 
             // Update the maximum local wave speed (i.e. convective eigenvalue) if using an adaptive time step
             if(this->all_param.flow_solver_param.adaptive_time_step == true) {
-                const double local_wave_speed = this->navier_stokes_physics->max_convective_eigenvalue(soln_at_q);
+                const double local_wave_speed = this->navier_stokes_physics->max_convective_eigenvalue(soln_at_q,soln_grad_at_q);
                 if(local_wave_speed > this->maximum_local_wave_speed) this->maximum_local_wave_speed = local_wave_speed;
             }
         }

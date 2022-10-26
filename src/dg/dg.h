@@ -778,7 +778,12 @@ protected:
      *  Furthermore, a more robust implementation would convert the values to a Bezier basis where
      *  the maximum and minimum values would be bounded by the Bernstein modal coefficients.
      */
-    real evaluate_CFL (std::vector< std::array<real,nstate> > soln_at_q, const real artificial_dissipation, const real cell_diameter, const unsigned int cell_degree);
+    real evaluate_CFL (
+        std::vector< std::array<real,nstate> > soln_at_q, 
+        std::vector< std::array< dealii::Tensor<1,dim,real>, nstate > > soln_grad_at_q, 
+        const real artificial_dissipation, 
+        const real cell_diameter, 
+        const unsigned int cell_degree);
 
     /// Reinitializes the numerical fluxes based on the current physics.
     /** Usually called after setting physics.

@@ -123,12 +123,12 @@ int main (int /*argc*/, char * /*argv*/[])
                     }
                 }
     
-                conv_flux_plus  = rans_sa_neg_physics.convective_flux(soln_plus);
-                conv_flux_mins  = rans_sa_neg_physics.convective_flux(soln_mins);
+                conv_flux_plus  = rans_sa_neg_physics.convective_flux(soln_plus,soln_gradient_plus);
+                conv_flux_mins  = rans_sa_neg_physics.convective_flux(soln_mins,soln_gradient_mins);
                 visc_flux_plus  = rans_sa_neg_physics.dissipative_flux(soln_plus,soln_gradient_plus,cell_index);
                 visc_flux_mins  = rans_sa_neg_physics.dissipative_flux(soln_mins,soln_gradient_mins,cell_index);
-                conv_flux_plus2 = rans_sa_neg_physics.convective_flux(soln_plus2);
-                conv_flux_mins2 = rans_sa_neg_physics.convective_flux(soln_mins2);
+                conv_flux_plus2 = rans_sa_neg_physics.convective_flux(soln_plus2,soln_gradient_plus2);
+                conv_flux_mins2 = rans_sa_neg_physics.convective_flux(soln_mins2,soln_gradient_mins2);
                 visc_flux_plus2 = rans_sa_neg_physics.dissipative_flux(soln_plus2,soln_gradient_plus2,cell_index);
                 visc_flux_mins2 = rans_sa_neg_physics.dissipative_flux(soln_mins2,soln_gradient_mins2,cell_index);
     

@@ -405,6 +405,7 @@ void DGBaseState<dim,nstate,real,MeshType>::update_model_variables()
 template <int dim, int nstate, typename real, typename MeshType>
 real DGBaseState<dim,nstate,real,MeshType>::evaluate_CFL (
     std::vector< std::array<real,nstate> > soln_at_q,
+    std::vector< std::array< dealii::Tensor<1,dim,real>, nstate > > soln_grad_at_q, 
     const real artificial_dissipation,
     const real cell_diameter,
     const unsigned int cell_degree
@@ -413,7 +414,7 @@ real DGBaseState<dim,nstate,real,MeshType>::evaluate_CFL (
     const unsigned int n_pts = soln_at_q.size();
     std::vector< real > convective_eigenvalues(n_pts);
     for (unsigned int isol = 0; isol < n_pts; ++isol) {
-        convective_eigenvalues[isol] = pde_physics_double->max_convective_eigenvalue (soln_at_q[isol]);
+        convective_eigenvalues[isol] = pde_physics_double->max_convective_eigenvalue (soln_at_q[isol],soln_grad_at_q[isol]);
         //viscosities[isol] = pde_physics_double->compute_diffusion_coefficient (soln_at_q[isol]);
     }
     const real max_eig = *(std::max_element(convective_eigenvalues.begin(), convective_eigenvalues.end()));

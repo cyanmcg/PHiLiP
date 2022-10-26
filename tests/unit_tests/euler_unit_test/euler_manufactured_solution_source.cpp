@@ -40,6 +40,7 @@ int main (int /*argc*/, char * /*argv*/[])
 
     std::array<double, dim+2> soln_plus;
     std::array<double, dim+2> soln_mins;
+    std::array<dealii::Tensor<1,dim,double>,nstate> soln_gradient;
     std::array<dealii::Tensor<1,dim,double>,nstate> conv_flux_plus;
     std::array<dealii::Tensor<1,dim,double>,nstate> conv_flux_mins;
     
@@ -63,8 +64,8 @@ int main (int /*argc*/, char * /*argv*/[])
                     soln_plus[s] = euler_physics.manufactured_solution_function->value(vertex_plus, s);
                     soln_mins[s] = euler_physics.manufactured_solution_function->value(vertex_mins, s);
                 }
-                conv_flux_plus = euler_physics.convective_flux(soln_plus);
-                conv_flux_mins = euler_physics.convective_flux(soln_mins);
+                conv_flux_plus = euler_physics.convective_flux(soln_plus,soln_gradient);
+                conv_flux_mins = euler_physics.convective_flux(soln_mins,soln_gradient);
 
                 for (int s=0; s<nstate; s++) {
                     divergence_finite_differences[s] += (conv_flux_plus[s][d] - conv_flux_mins[s][d]) / (2.0 * perturbation);

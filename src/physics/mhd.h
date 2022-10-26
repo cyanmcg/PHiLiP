@@ -115,7 +115,8 @@ public:
 
     /// Convective flux: \f$ \mathbf{F}_{conv} \f$
     std::array<dealii::Tensor<1,dim,real>,nstate> convective_flux (
-        const std::array<real,nstate> &conservative_soln) const;
+        const std::array<real,nstate> &conservative_soln,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient) const;
 
     /// Convective flux: \f$ \mathbf{F}_{conv} \hat{n} \f$
     std::array<real,nstate> convective_normal_flux (const std::array<real,nstate> &conservative_soln, const dealii::Tensor<1,dim,real> &normal) const;
@@ -128,10 +129,13 @@ public:
     /// Spectral radius of convective term Jacobian is 'c'
     std::array<real,nstate> convective_eigenvalues (
         const std::array<real,nstate> &/*conservative_soln*/,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/,
         const dealii::Tensor<1,dim,real> &/*normal*/) const;
 
     /// Maximum convective eigenvalue used in Lax-Friedrichs
-    real max_convective_eigenvalue (const std::array<real,nstate> &soln) const;
+    real max_convective_eigenvalue (
+        const std::array<real,nstate> &soln,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const;
 
     /// Dissipative flux: 0
     std::array<dealii::Tensor<1,dim,real>,nstate> dissipative_flux (

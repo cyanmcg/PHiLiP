@@ -26,6 +26,8 @@ pde_physics(physics_input)
 std::array<real, nstate> evaluate_flux (
     const std::array<real, nstate> &soln_int,
     const std::array<real, nstate> &soln_ext,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient_int,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient_ext,
     const dealii::Tensor<1,dim,real> &normal1) const;
 
 protected:

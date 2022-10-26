@@ -629,7 +629,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term_explicit(
               soln_hess_at_q[iquad][istate] += soln_coeff[idof] * fe_values_vol.shape_hessian_component(idof, iquad, istate);
         }
         // Evaluate physical convective flux and source term
-        conv_phys_flux_at_q[iquad] = DGBaseState<dim,nstate,real,MeshType>::pde_physics_double->convective_flux (soln_at_q[iquad]);
+        conv_phys_flux_at_q[iquad] = DGBaseState<dim,nstate,real,MeshType>::pde_physics_double->convective_flux (soln_at_q[iquad], soln_grad_at_q[iquad]);
         diss_phys_flux_at_q[iquad] = DGBaseState<dim,nstate,real,MeshType>::pde_physics_double->dissipative_flux (soln_at_q[iquad], soln_grad_at_q[iquad], current_cell_index);
 
         if(this->pde_physics_double->has_nonzero_physical_source){
@@ -660,7 +660,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term_explicit(
     //const real cell_diameter = cell_volume;
     const real cell_radius = 0.5 * cell_diameter;
     this->cell_volume[cell_index] = cell_volume;
-    this->max_dt_cell[cell_index] = DGBaseState<dim,nstate,real,MeshType>::evaluate_CFL ( soln_at_q, max_artificial_diss, cell_radius, cell_degree);
+    this->max_dt_cell[cell_index] = DGBaseState<dim,nstate,real,MeshType>::evaluate_CFL ( soln_at_q, soln_grad_at_q, max_artificial_diss, cell_radius, cell_degree);
 
     // Weak form
     // The right-hand side sends all the term to the side of the source term
@@ -799,7 +799,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_boundary_term_explicit(
         // Changing it back to the standdard F* = F*(Uin, Ubc)
         // This is known not be adjoint consistent as per the paper above. Page 85, second to last paragraph.
         // Losing 2p+1 OOA on functionals for all PDEs.
-        conv_num_flux_dot_n[iquad] = DGBaseState<dim,nstate,real,MeshType>::conv_num_flux_double->evaluate_flux(soln_int[iquad], soln_ext[iquad], normal_int);
+        conv_num_flux_dot_n[iquad] = DGBaseState<dim,nstate,real,MeshType>::conv_num_flux_double->evaluate_flux(soln_int[iquad], soln_ext[iquad], soln_grad_int[iquad], soln_grad_ext[iquad], normal_int);
         // Notice that the flux uses the solution given by the Dirichlet or Neumann boundary condition
         diss_soln_num_flux[iquad] = DGBaseState<dim,nstate,real,MeshType>::diss_num_flux_double->evaluate_solution_flux(soln_ext[iquad], soln_ext[iquad], normal_int);
 
@@ -970,7 +970,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_face_term_explicit(
         }
 
         // Evaluate physical convective flux, physical dissipative flux, and source term
-        conv_num_flux_dot_n[iquad] = DGBaseState<dim,nstate,real,MeshType>::conv_num_flux_double->evaluate_flux(soln_int[iquad], soln_ext[iquad], normal_int);
+        conv_num_flux_dot_n[iquad] = DGBaseState<dim,nstate,real,MeshType>::conv_num_flux_double->evaluate_flux(soln_int[iquad], soln_ext[iquad], soln_grad_int[iquad], soln_grad_ext[iquad], normal_int);
         diss_soln_num_flux[iquad] = DGBaseState<dim,nstate,real,MeshType>::diss_num_flux_double->evaluate_solution_flux(soln_int[iquad], soln_ext[iquad], normal_int);
 
         doubleArrayTensor1 diss_soln_jump_int, diss_soln_jump_ext;
@@ -1462,7 +1462,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_boundary_term(
         // This is known not be adjoint consistent as per the paper above. Page 85, second to last paragraph.
         // Losing 2p+1 OOA on functionals for all PDEs.
         //conv_num_flux_dot_n[iquad] = conv_num_flux.evaluate_flux(soln_int[iquad], soln_ext[iquad], normal_int);
-        conv_num_flux_dot_n[iquad] = conv_num_flux.evaluate_flux(soln_int[iquad], soln_ext[iquad], normal_int);
+        conv_num_flux_dot_n[iquad] = conv_num_flux.evaluate_flux(soln_int[iquad], soln_ext[iquad], soln_grad_int[iquad], soln_grad_ext[iquad], normal_int);
         // Notice that the flux uses the solution given by the Dirichlet or Neumann boundary condition
         diss_soln_num_flux[iquad] = diss_num_flux.evaluate_solution_flux(soln_ext[iquad], soln_ext[iquad], normal_int);
 
@@ -2491,7 +2491,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_face_term(
     for (unsigned int iquad=0; iquad<n_face_quad_pts; ++iquad) {
 
         // Evaluate physical convective flux, physical dissipative flux, and source term
-        conv_num_flux_dot_n = conv_num_flux.evaluate_flux(soln_int[iquad], soln_ext[iquad], phys_unit_normal_int[iquad]);
+        conv_num_flux_dot_n = conv_num_flux.evaluate_flux(soln_int[iquad], soln_ext[iquad], soln_grad_int[iquad], soln_grad_ext[iquad], phys_unit_normal_int[iquad]);
         diss_soln_num_flux = diss_num_flux.evaluate_solution_flux(soln_int[iquad], soln_ext[iquad], phys_unit_normal_int[iquad]);
 
         ADArrayTensor1 diss_soln_jump_int, diss_soln_jump_ext;
@@ -3699,7 +3699,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_volume_term(
                 }
             }
         }
-        conv_phys_flux_at_q[iquad] = physics.convective_flux (soln_at_q[iquad]);
+        conv_phys_flux_at_q[iquad] = physics.convective_flux (soln_at_q[iquad], soln_grad_at_q[iquad]);
         diss_phys_flux_at_q[iquad] = physics.dissipative_flux (soln_at_q[iquad], soln_grad_at_q[iquad], current_cell_index);
 
         if(physics.has_nonzero_physical_source){

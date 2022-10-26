@@ -80,7 +80,8 @@ real2 ReynoldsAveragedNavierStokesBase<dim,nstate,real>
 template <int dim, int nstate, typename real>
 std::array<dealii::Tensor<1,dim,real>,nstate> ReynoldsAveragedNavierStokesBase<dim,nstate,real>
 ::convective_flux (
-    const std::array<real,nstate> &conservative_soln) const
+    const std::array<real,nstate> &conservative_soln,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const
 {
     return convective_flux_templated<real>(conservative_soln);
 }
@@ -319,6 +320,7 @@ template <int dim, int nstate, typename real>
 std::array<real,nstate> ReynoldsAveragedNavierStokesBase<dim,nstate,real>
 ::convective_eigenvalues (
     const std::array<real,nstate> &conservative_soln,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/,
     const dealii::Tensor<1,dim,real> &normal) const
 {
     std::array<real,dim+2> conservative_soln_rans = extract_rans_conservative_solution(conservative_soln);
@@ -337,7 +339,9 @@ std::array<real,nstate> ReynoldsAveragedNavierStokesBase<dim,nstate,real>
 //----------------------------------------------------------------
 template <int dim, int nstate, typename real>
 real ReynoldsAveragedNavierStokesBase<dim,nstate,real>
-::max_convective_eigenvalue (const std::array<real,nstate> &conservative_soln) const
+::max_convective_eigenvalue (
+    const std::array<real,nstate> &conservative_soln,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const
 {
     const std::array<real,dim+2> conservative_soln_rans = extract_rans_conservative_solution(conservative_soln);
 
@@ -743,7 +747,7 @@ void ReynoldsAveragedNavierStokesBase<dim,nstate,real>
 
     for (int istate=dim+2; istate<nstate; ++istate) {
 
-        std::array<real,nstate> characteristic_dot_n = convective_eigenvalues(conservative_boundary_values, normal_int);
+        std::array<real,nstate> characteristic_dot_n = convective_eigenvalues(conservative_boundary_values, boundary_gradients, normal_int);
         const bool inflow = (characteristic_dot_n[istate] <= 0.);
 
         if (inflow) { // Dirichlet boundary condition

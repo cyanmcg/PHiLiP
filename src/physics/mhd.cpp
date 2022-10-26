@@ -298,7 +298,8 @@ compute_mean_specific_energy(const std::array<real,nstate> &soln_const,
 
 template <int dim, int nstate, typename real>
 std::array<dealii::Tensor<1,dim,real>,nstate> MHD<dim,nstate,real>
-::convective_flux (const std::array<real,nstate> &conservative_soln) const
+::convective_flux (const std::array<real,nstate> &conservative_soln,
+                   const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const
 {
     std::array<dealii::Tensor<1,dim,real>,nstate> conv_flux;
     const real density = conservative_soln[0];
@@ -426,6 +427,7 @@ template <int dim, int nstate, typename real>
 std::array<real,nstate> MHD<dim,nstate,real>
 ::convective_eigenvalues (
     const std::array<real,nstate> &conservative_soln,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/,
     const dealii::Tensor<1,dim,real> &normal) const
 {
     const dealii::Tensor<1,dim,real> vel = compute_velocities(conservative_soln);
@@ -443,7 +445,8 @@ std::array<real,nstate> MHD<dim,nstate,real>
 }
 template <int dim, int nstate, typename real>
 real MHD<dim,nstate,real>
-::max_convective_eigenvalue (const std::array<real,nstate> &conservative_soln) const
+::max_convective_eigenvalue (const std::array<real,nstate> &conservative_soln,
+                             const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const
 {
     //std::cout << "going to calculate max eig" << std::endl;
     const dealii::Tensor<1,dim,real> vel = compute_velocities(conservative_soln);

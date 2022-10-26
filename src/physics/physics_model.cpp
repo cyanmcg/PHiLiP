@@ -30,7 +30,8 @@ PhysicsModel<dim,nstate,real,nstate_baseline_physics>::PhysicsModel(
 
 template <int dim, int nstate, typename real, int nstate_baseline_physics>
 std::array<dealii::Tensor<1,dim,real>,nstate> PhysicsModel<dim,nstate,real,nstate_baseline_physics>
-::convective_flux (const std::array<real,nstate> &conservative_soln) const
+::convective_flux (const std::array<real,nstate> &conservative_soln,
+                   const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient) const
 {
     // Get baseline conservative solution with nstate_baseline_physics
     std::array<real,nstate_baseline_physics> baseline_conservative_soln;
@@ -38,12 +39,13 @@ std::array<dealii::Tensor<1,dim,real>,nstate> PhysicsModel<dim,nstate,real,nstat
         baseline_conservative_soln[s] = conservative_soln[s];
     }
 
+    const std::array<dealii::Tensor<1,dim,real>,nstate_baseline_physics> baseline_solution_gradient;
     // Get baseline convective flux
     std::array<dealii::Tensor<1,dim,real>,nstate_baseline_physics> baseline_conv_flux
-         = physics_baseline->convective_flux(baseline_conservative_soln);
+         = physics_baseline->convective_flux(baseline_conservative_soln,baseline_solution_gradient);
 
     // Initialize conv_flux as the model convective flux
-    std::array<dealii::Tensor<1,dim,real>,nstate> conv_flux = model->convective_flux(conservative_soln);
+    std::array<dealii::Tensor<1,dim,real>,nstate> conv_flux = model->convective_flux(conservative_soln,solution_gradient);
 
     // Add the baseline_conv_flux terms to conv_flux
     for(int s=0; s<nstate_baseline_physics; ++s){
@@ -186,18 +188,20 @@ template <int dim, int nstate, typename real, int nstate_baseline_physics>
 std::array<real,nstate> PhysicsModel<dim,nstate,real,nstate_baseline_physics>
 ::convective_eigenvalues (
     const std::array<real,nstate> &conservative_soln,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient,
     const dealii::Tensor<1,dim,real> &normal) const
 {
     std::array<real,nstate> eig;
     if constexpr(nstate==nstate_baseline_physics) {
-        eig = physics_baseline->convective_eigenvalues(conservative_soln, normal);
+        eig = physics_baseline->convective_eigenvalues(conservative_soln, solution_gradient, normal);
     } else {
-        eig = model->convective_eigenvalues(conservative_soln, normal);
+        eig = model->convective_eigenvalues(conservative_soln, solution_gradient, normal);
         std::array<real,nstate_baseline_physics> baseline_conservative_soln;
         for(int s=0; s<nstate_baseline_physics; ++s){
             baseline_conservative_soln[s] = conservative_soln[s];
         }
-        std::array<real,nstate_baseline_physics> baseline_eig = physics_baseline->convective_eigenvalues(baseline_conservative_soln, normal);
+        const std::array<dealii::Tensor<1,dim,real>,nstate_baseline_physics> baseline_solution_gradient;
+        std::array<real,nstate_baseline_physics> baseline_eig = physics_baseline->convective_eigenvalues(baseline_conservative_soln, baseline_solution_gradient, normal);
         for(int s=0; s<nstate_baseline_physics; ++s){
             eig[s] += baseline_eig[s];
         }  
@@ -208,18 +212,20 @@ std::array<real,nstate> PhysicsModel<dim,nstate,real,nstate_baseline_physics>
 
 template <int dim, int nstate, typename real, int nstate_baseline_physics>
 real PhysicsModel<dim,nstate,real,nstate_baseline_physics>
-::max_convective_eigenvalue (const std::array<real,nstate> &conservative_soln) const
+::max_convective_eigenvalue (const std::array<real,nstate> &conservative_soln,
+                             const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient) const
 {
     real max_eig;
     if constexpr(nstate==nstate_baseline_physics) {
-        max_eig = physics_baseline->max_convective_eigenvalue(conservative_soln);
+        max_eig = physics_baseline->max_convective_eigenvalue(conservative_soln,solution_gradient);
     } else {
-        max_eig = model->max_convective_eigenvalue(conservative_soln);
+        max_eig = model->max_convective_eigenvalue(conservative_soln,solution_gradient);
         std::array<real,nstate_baseline_physics> baseline_conservative_soln;
         for(int s=0; s<nstate_baseline_physics; ++s){
             baseline_conservative_soln[s] = conservative_soln[s];
         }
-        real baseline_max_eig = physics_baseline->max_convective_eigenvalue(baseline_conservative_soln);
+        const std::array<dealii::Tensor<1,dim,real>,nstate_baseline_physics> baseline_solution_gradient;
+        real baseline_max_eig = physics_baseline->max_convective_eigenvalue(baseline_conservative_soln, baseline_solution_gradient);
         max_eig = max_eig > baseline_max_eig ? max_eig : baseline_max_eig;
     }
     return max_eig;

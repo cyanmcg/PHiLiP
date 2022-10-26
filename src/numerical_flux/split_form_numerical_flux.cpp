@@ -8,8 +8,10 @@ namespace NumericalFlux {
 
 template <int dim, int nstate, typename real>
 std::array<real, nstate> SplitFormNumFlux<dim,nstate,real>::evaluate_flux(
- const std::array<real, nstate> &soln_int,
+    const std::array<real, nstate> &soln_int,
     const std::array<real, nstate> &soln_ext,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient_int,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient_ext,
     const dealii::Tensor<1,dim,real> &normal_int) const
  {
   //std::cout << "evaluating the split form flux" <<std::endl;
@@ -19,9 +21,9 @@ std::array<real, nstate> SplitFormNumFlux<dim,nstate,real>::evaluate_flux(
      conv_phys_split_flux = pde_physics->convective_numerical_split_flux (soln_int,soln_ext);
      //std::cout << "done evaluating the conv num split flux" <<std::endl;
 
-     const real conv_max_eig_int = pde_physics->max_convective_eigenvalue(soln_int);
+     const real conv_max_eig_int = pde_physics->max_convective_eigenvalue(soln_int,solution_gradient_int);
     // std::cout << "1st eig" << std::endl;
-     const real conv_max_eig_ext = pde_physics->max_convective_eigenvalue(soln_ext);
+     const real conv_max_eig_ext = pde_physics->max_convective_eigenvalue(soln_ext,solution_gradient_ext);
      //std::cout << "2nd eig" << std::endl;
      const real conv_max_eig = std::max(conv_max_eig_int, conv_max_eig_ext);
 

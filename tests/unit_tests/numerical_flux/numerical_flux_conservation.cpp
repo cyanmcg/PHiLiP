@@ -216,8 +216,8 @@ int test_convective_numerical_flux_conservation (const PHiLiP::Parameters::AllPa
         soln_grad_ext[s] = soln_grad_int[s];
     }
 
-    std::array<double, nstate> conv_num_flux_dot_n_1 = conv_num_flux->evaluate_flux(soln_int, soln_ext, normal_int);
-    std::array<double, nstate> conv_num_flux_dot_n_2 = conv_num_flux->evaluate_flux(soln_ext, soln_int, -normal_int);
+    std::array<double, nstate> conv_num_flux_dot_n_1 = conv_num_flux->evaluate_flux(soln_int, soln_ext, soln_grad_int, soln_grad_ext, normal_int);
+    std::array<double, nstate> conv_num_flux_dot_n_2 = conv_num_flux->evaluate_flux(soln_ext, soln_int, soln_grad_ext, soln_grad_int,-normal_int);
 
     std::cout << "Convective numerical flux conservation (should be equal and opposite)" << std::endl;
     compare_array<dim,nstate> (conv_num_flux_dot_n_1, conv_num_flux_dot_n_2, -1.0);
@@ -256,9 +256,9 @@ int test_convective_numerical_flux_consistency (const PHiLiP::Parameters::AllPar
     // Consistent numerical flux should be equal to physical flux when both states are equal
     // Therefore, f1 - f2 = 0
     soln_int = soln_ext;
-    std::array<double, nstate> conv_num_flux_dot_n = conv_num_flux->evaluate_flux(soln_int, soln_ext, normal_int);
+    std::array<double, nstate> conv_num_flux_dot_n = conv_num_flux->evaluate_flux(soln_int, soln_ext, soln_grad_int, soln_grad_ext, normal_int);
 
-    const std::array<dealii::Tensor<1,dim,double>, nstate> conv_phys_flux_int = pde_physics->convective_flux (soln_int);
+    const std::array<dealii::Tensor<1,dim,double>, nstate> conv_phys_flux_int = pde_physics->convective_flux (soln_int,soln_grad_int);
 
     std::array<double, nstate> conv_phys_flux_dot_n;
     for (int s=0; s<nstate; s++) {

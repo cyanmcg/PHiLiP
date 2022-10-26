@@ -36,7 +36,8 @@ public:
     /// Convective flux terms additional to the baseline physics (including convective flux terms in additional PDEs of model)
     virtual std::array<dealii::Tensor<1,dim,real>,nstate> 
     convective_flux (
-        const std::array<real,nstate> &conservative_soln) const = 0;
+        const std::array<real,nstate> &conservative_soln,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient) const = 0;
 
     /// Dissipative flux terms additional to the baseline physics (including dissipative flux terms in additional PDEs of model)
 	virtual std::array<dealii::Tensor<1,dim,real>,nstate> 
@@ -55,10 +56,13 @@ public:
     /** Used for scalar dissipation */
     virtual std::array<real,nstate> convective_eigenvalues (
         const std::array<real,nstate> &/*solution*/,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/,
         const dealii::Tensor<1,dim,real> &/*normal*/) const = 0;
 
     /// Maximum convective eigenvalue used in Lax-Friedrichs
-    virtual real max_convective_eigenvalue (const std::array<real,nstate> &soln) const = 0;
+    virtual real max_convective_eigenvalue (
+        const std::array<real,nstate> &soln,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const = 0;
 
     /// Physical source terms additional to the baseline physics (including physical source terms in additional PDEs of model)
     virtual std::array<real,nstate> physical_source_term (

@@ -32,7 +32,8 @@ public:
 
     /// Convective flux: \f$ \mathbf{F}_{conv} \f$
     std::array<dealii::Tensor<1,dim,real>,nstate> convective_flux (
-        const std::array<real,nstate> &conservative_soln) const;
+        const std::array<real,nstate> &conservative_soln,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient) const;
 
     /// Dissipative flux: 0
     std::array<dealii::Tensor<1,dim,real>,nstate> dissipative_flux (
@@ -43,6 +44,7 @@ public:
     /// Convective flux Jacobian: \f$ \frac{\partial \mathbf{F}_{conv}}{\partial w} \cdot \mathbf{n} \f$
     dealii::Tensor<2,nstate,real> convective_flux_directional_jacobian (
         const std::array<real,nstate> &conservative_soln,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient,
         const dealii::Tensor<1,dim,real> &normal) const;
 
     /// Physical source term 
@@ -97,13 +99,24 @@ public:
         const std::array<real,nstate> &conservative_soln1,
         const std::array<real,nstate> &conservative_soln2) const;
 
+    template<typename real2>
+    dealii::Tensor<1,dim,real2> compute_velocities (
+        const std::array<dealii::Tensor<1,dim,real2>,nstate> &solution_gradient) const;
+
+    template<typename real2>
+    real2 compute_velocity_squared (
+        const dealii::Tensor<1,dim,real2> &velocities) const;
+
     /// Spectral radius of convective term Jacobian is 'c'
     std::array<real,nstate> convective_eigenvalues (
-        const std::array<real,nstate> &/*conservative_soln*/,
-        const dealii::Tensor<1,dim,real> &/*normal*/) const;
+        const std::array<real,nstate> &conservative_soln,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient,
+        const dealii::Tensor<1,dim,real> &normal) const override;
 
     /// Maximum convective eigenvalue used in Lax-Friedrichs
-    real max_convective_eigenvalue (const std::array<real,nstate> &soln) const;
+    real max_convective_eigenvalue (
+        const std::array<real,nstate> &conservative_soln,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient) const override;
 
     /// Boundary condition handler
     void boundary_face_values (
@@ -125,7 +138,8 @@ protected:
     template <typename real2>
     std::array<dealii::Tensor<1,dim,real2>,nstate> 
     convective_flux_templated (
-        const std::array<real2,nstate> &conservative_soln) const;
+        const std::array<real2,nstate> &conservative_soln,
+        const std::array<dealii::Tensor<1,dim,real2>,nstate> &solution_gradient) const;
 
     template <typename real2>
     std::array<dealii::Tensor<1,dim,real2>,nstate> 

@@ -116,12 +116,12 @@ int main (int /*argc*/, char * /*argv*/[])
                     }
                 }
 
-                conv_flux_plus  = navier_stokes_physics.convective_flux(soln_plus);
-                conv_flux_mins  = navier_stokes_physics.convective_flux(soln_mins);
+                conv_flux_plus  = navier_stokes_physics.convective_flux(soln_plus,soln_gradient_plus);
+                conv_flux_mins  = navier_stokes_physics.convective_flux(soln_mins,soln_gradient_mins);
                 visc_flux_plus  = navier_stokes_physics.dissipative_flux(soln_plus,soln_gradient_plus);
                 visc_flux_mins  = navier_stokes_physics.dissipative_flux(soln_mins,soln_gradient_mins);
-                conv_flux_plus2 = navier_stokes_physics.convective_flux(soln_plus2);
-                conv_flux_mins2 = navier_stokes_physics.convective_flux(soln_mins2);
+                conv_flux_plus2 = navier_stokes_physics.convective_flux(soln_plus2,soln_gradient_plus2);
+                conv_flux_mins2 = navier_stokes_physics.convective_flux(soln_mins2,soln_gradient_mins2);
                 visc_flux_plus2 = navier_stokes_physics.dissipative_flux(soln_plus2,soln_gradient_plus2);
                 visc_flux_mins2 = navier_stokes_physics.dissipative_flux(soln_mins2,soln_gradient_mins2);
 

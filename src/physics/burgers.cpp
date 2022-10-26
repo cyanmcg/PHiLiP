@@ -25,7 +25,7 @@ void Burgers<dim,nstate,real>
 
     for (int istate=0; istate<nstate; ++istate) {
 
-        std::array<real,nstate> characteristic_dot_n = convective_eigenvalues(boundary_values, normal_int);
+        std::array<real,nstate> characteristic_dot_n = convective_eigenvalues(boundary_values, boundary_gradients, normal_int);
         const bool inflow = (characteristic_dot_n[istate] <= 0.);
 
         if (inflow || hasDiffusion) { // Dirichlet boundary condition
@@ -55,7 +55,8 @@ void Burgers<dim,nstate,real>
 
 template <int dim, int nstate, typename real>
 std::array<dealii::Tensor<1,dim,real>,nstate> Burgers<dim,nstate,real>
-::convective_flux (const std::array<real,nstate> &solution) const
+::convective_flux (const std::array<real,nstate> &solution,
+                   const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const
 {
     std::array<dealii::Tensor<1,dim,real>,nstate> conv_flux;
     for (int flux_dim=0; flux_dim<dim; ++flux_dim) {
@@ -93,6 +94,7 @@ template <int dim, int nstate, typename real>
 std::array<real,nstate> Burgers<dim,nstate,real>
 ::convective_eigenvalues (
     const std::array<real,nstate> &solution,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/,
     const dealii::Tensor<1,dim,real> &normal) const
 {
     std::array<real,nstate> eig;
@@ -107,7 +109,8 @@ std::array<real,nstate> Burgers<dim,nstate,real>
 
 template <int dim, int nstate, typename real>
 real Burgers<dim,nstate,real>
-::max_convective_eigenvalue (const std::array<real,nstate> &soln) const
+::max_convective_eigenvalue (const std::array<real,nstate> &soln,
+                             const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const
 {
     real max_eig = 0;
     for (int i=0; i<dim; i++) {

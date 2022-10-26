@@ -55,7 +55,8 @@ public:
 
     /// Convective fluxes that will be differentiated once in space.
     virtual std::array<dealii::Tensor<1,dim,real>,nstate> convective_flux (
-        const std::array<real,nstate> &solution) const = 0;
+        const std::array<real,nstate> &solution,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient) const = 0;
 
     /// Convective Numerical Split Flux for split form
     virtual std::array<dealii::Tensor<1,dim,real>,nstate> convective_numerical_split_flux (
@@ -66,10 +67,13 @@ public:
      */
     virtual std::array<real,nstate> convective_eigenvalues (
         const std::array<real,nstate> &/*solution*/,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/,
         const dealii::Tensor<1,dim,real> &/*normal*/) const = 0;
 
     /// Maximum convective eigenvalue used in Lax-Friedrichs
-    virtual real max_convective_eigenvalue (const std::array<real,nstate> &soln) const = 0;
+    virtual real max_convective_eigenvalue (
+        const std::array<real,nstate> &soln,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const = 0;
 
     // /// Evaluate the diffusion matrix \f$ A \f$ such that \f$F_v = A \nabla u\f$.
     // virtual std::array<dealii::Tensor<1,dim,real>,nstate> apply_diffusion_matrix (

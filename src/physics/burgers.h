@@ -69,7 +69,9 @@ public:
     /// Destructor
     ~Burgers () {};
     /// Convective flux: \f$ \mathbf{F}_{conv} =  u \f$
-    std::array<dealii::Tensor<1,dim,real>,nstate> convective_flux (const std::array<real,nstate> &solution) const;
+    std::array<dealii::Tensor<1,dim,real>,nstate> convective_flux (
+        const std::array<real,nstate> &solution,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient) const;
 
     /// Convective split flux
     std::array<dealii::Tensor<1,dim,real>,nstate> convective_numerical_split_flux (
@@ -79,10 +81,13 @@ public:
     /// Spectral radius of convective term Jacobian is 'c'
     std::array<real,nstate> convective_eigenvalues (
         const std::array<real,nstate> &/*solution*/,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/,
         const dealii::Tensor<1,dim,real> &/*normal*/) const;
 
     /// Maximum convective eigenvalue used in Lax-Friedrichs
-    real max_convective_eigenvalue (const std::array<real,nstate> &soln) const;
+    real max_convective_eigenvalue (
+        const std::array<real,nstate> &soln,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const;
 
     //  /// Diffusion matrix is identity
     //  std::array<dealii::Tensor<1,dim,real>,nstate> apply_diffusion_matrix (

@@ -36,7 +36,8 @@ public:
 
     /// Convective flux: \f$ \mathbf{F}_{conv} \f$
     std::array<dealii::Tensor<1,dim,real>,nstate> convective_flux (
-        const std::array<real,nstate> &conservative_soln) const;
+        const std::array<real,nstate> &conservative_soln,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &solution_gradient) const;
 
     /// Dissipative (i.e. viscous) flux: \f$ \mathbf{F}_{diss} \f$ 
     std::array<dealii::Tensor<1,dim,real>,nstate> dissipative_flux (
@@ -71,10 +72,13 @@ public:
      */
     std::array<real,nstate> convective_eigenvalues (
         const std::array<real,nstate> &/*solution*/,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/,
         const dealii::Tensor<1,dim,real> &/*normal*/) const;
 
     /// Maximum convective eigenvalue used in Lax-Friedrichs
-    real max_convective_eigenvalue (const std::array<real,nstate> &soln) const;
+    real max_convective_eigenvalue (
+        const std::array<real,nstate> &soln,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const;
 
     /// Evaluates boundary values and gradients on the other side of the face.
     void boundary_face_values (

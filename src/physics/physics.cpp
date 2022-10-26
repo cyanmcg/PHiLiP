@@ -111,7 +111,6 @@ std::array<real,nstate> PhysicsBase<dim,nstate,real>
     return physical_source;
 }
 
-
 template <int dim, int nstate, typename real>
 void PhysicsBase<dim,nstate,real>
 ::boundary_face_values (
@@ -132,7 +131,7 @@ void PhysicsBase<dim,nstate,real>
 
     for (int istate=0; istate<nstate; ++istate) {
 
-        std::array<real,nstate> characteristic_dot_n = convective_eigenvalues(boundary_values, normal_int);
+        std::array<real,nstate> characteristic_dot_n = convective_eigenvalues(boundary_values, boundary_gradients, normal_int);
         const bool inflow = (characteristic_dot_n[istate] <= 0.);
 
         if (inflow) { // Dirichlet boundary condition

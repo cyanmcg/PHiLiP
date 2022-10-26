@@ -38,6 +38,7 @@ int main (int /*argc*/, char * /*argv*/[])
     dealii::GridGenerator::subdivided_hyper_rectangle(grid, repetitions, corner1, corner2);
 
     std::array<double, nstate> soln;
+    std::array<dealii::Tensor<1,dim,double>,nstate> soln_gradient;
     
     for (auto cell : grid.active_cell_iterators()) {
         for (unsigned int v=0; v < dealii::GeometryInfo<dim>::vertices_per_cell; ++v) {
@@ -78,10 +79,10 @@ int main (int /*argc*/, char * /*argv*/[])
                     soln_mins[col] -= dw;
                     soln_mins2[col] -= 2*dw;
 
-                    const std::array<dealii::Tensor<1,dim,double>,nstate> conv_flux_plus2 = navier_stokes_physics.convective_flux(soln_plus2);
-                    const std::array<dealii::Tensor<1,dim,double>,nstate> conv_flux_plus = navier_stokes_physics.convective_flux(soln_plus);
-                    const std::array<dealii::Tensor<1,dim,double>,nstate> conv_flux_mins = navier_stokes_physics.convective_flux(soln_mins);
-                    const std::array<dealii::Tensor<1,dim,double>,nstate> conv_flux_mins2 = navier_stokes_physics.convective_flux(soln_mins2);
+                    const std::array<dealii::Tensor<1,dim,double>,nstate> conv_flux_plus2 = navier_stokes_physics.convective_flux(soln_plus2,soln_gradient);
+                    const std::array<dealii::Tensor<1,dim,double>,nstate> conv_flux_plus = navier_stokes_physics.convective_flux(soln_plus,soln_gradient);
+                    const std::array<dealii::Tensor<1,dim,double>,nstate> conv_flux_mins = navier_stokes_physics.convective_flux(soln_mins,soln_gradient);
+                    const std::array<dealii::Tensor<1,dim,double>,nstate> conv_flux_mins2 = navier_stokes_physics.convective_flux(soln_mins2,soln_gradient);
 
                     for (int row=0; row<nstate; row++) {
                         jacobian_fd[row][col] = 

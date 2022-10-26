@@ -143,7 +143,7 @@ std::array<dealii::Tensor<1,dim,real2>,nstate> EnthalpyConservingArtificialDissi
     std::array<dealii::Tensor<1,dim,real2>,nstate> primitive_soln_gradient = navier_stokes.convert_conservative_gradient_to_primitive_gradient(conservative_soln,conservative_soln_gradient);
     std::array<dealii::Tensor<1,dim,real2>,nstate> enthalpy_diss_flux;
 
-    artificial_viscosity*= navier_stokes.max_convective_eigenvalue(conservative_soln);
+    artificial_viscosity*= navier_stokes.max_convective_eigenvalue(conservative_soln,solution_gradient);
 
     for (int i=0; i<nstate; i++)
     {

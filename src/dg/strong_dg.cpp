@@ -122,11 +122,11 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_boundary_term_derivatives(
         // Changing it back to the standdard F* = F*(Uin, Ubc)
         // This is known not be adjoint consistent as per the paper above. Page 85, second to last paragraph.
         // Losing 2p+1 OOA on functionals for all PDEs.
-        conv_num_flux_dot_n[iquad] = DGBaseState<dim,nstate,real,MeshType>::conv_num_flux_fad->evaluate_flux(soln_int[iquad], soln_ext[iquad], normal_int);
+        conv_num_flux_dot_n[iquad] = DGBaseState<dim,nstate,real,MeshType>::conv_num_flux_fad->evaluate_flux(soln_int[iquad], soln_ext[iquad], soln_grad_int[iquad], soln_grad_ext[iquad], normal_int);
  
         // Used for strong form
         // Which physical convective flux to use?
-        conv_phys_flux[iquad] = this->pde_physics_fad->convective_flux (soln_int[iquad]);
+        conv_phys_flux[iquad] = this->pde_physics_fad->convective_flux (soln_int[iquad],soln_grad_int[iquad]);
  
         // Notice that the flux uses the solution given by the Dirichlet or Neumann boundary condition
         diss_soln_num_flux[iquad] = DGBaseState<dim,nstate,real,MeshType>::diss_num_flux_fad->evaluate_solution_flux(soln_ext[iquad], soln_ext[iquad], normal_int);
@@ -242,7 +242,7 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_derivatives(
         //if(nstate>1) std::cout << "Momentum " << soln_at_q[iquad][1] << std::endl;
         //std::cout << "Energy " << soln_at_q[iquad][nstate-1] << std::endl;
         // Evaluate physical convective flux and source term
-        conv_phys_flux_at_q[iquad] = this->pde_physics_fad->convective_flux (soln_at_q[iquad]);
+        conv_phys_flux_at_q[iquad] = this->pde_physics_fad->convective_flux (soln_at_q[iquad], soln_grad_at_q[iquad]);
         diss_phys_flux_at_q[iquad] = this->pde_physics_fad->dissipative_flux (soln_at_q[iquad], soln_grad_at_q[iquad], current_cell_index);
 
         if(this->pde_physics_fad->has_nonzero_physical_source){
@@ -445,10 +445,10 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_face_term_derivatives(
         //std::cout << "Energy ext" << soln_ext[iquad][nstate-1] << std::endl;
 
         // Evaluate physical convective flux, physical dissipative flux, and source term
-        conv_num_flux_dot_n[iquad] = DGBaseState<dim,nstate,real,MeshType>::conv_num_flux_fad->evaluate_flux(soln_int[iquad], soln_ext[iquad], normal_int);
+        conv_num_flux_dot_n[iquad] = DGBaseState<dim,nstate,real,MeshType>::conv_num_flux_fad->evaluate_flux(soln_int[iquad], soln_ext[iquad], soln_grad_int[iquad], soln_grad_ext[iquad], normal_int);
 
-        conv_phys_flux_int[iquad] = this->pde_physics_fad->convective_flux (soln_int[iquad]);
-        conv_phys_flux_ext[iquad] = this->pde_physics_fad->convective_flux (soln_ext[iquad]);
+        conv_phys_flux_int[iquad] = this->pde_physics_fad->convective_flux (soln_int[iquad],soln_grad_int[iquad]);
+        conv_phys_flux_ext[iquad] = this->pde_physics_fad->convective_flux (soln_ext[iquad],soln_grad_ext[iquad]);
 
         diss_soln_num_flux[iquad] = DGBaseState<dim,nstate,real,MeshType>::diss_num_flux_fad->evaluate_solution_flux(soln_int[iquad], soln_ext[iquad], normal_int);
 
@@ -586,7 +586,7 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_explicit(
         //if(nstate>1) std::cout << "Momentum " << soln_at_q[iquad][1] << std::endl;
         //std::cout << "Energy " << soln_at_q[iquad][nstate-1] << std::endl;
         // Evaluate physical convective flux and source term
-        conv_phys_flux_at_q[iquad] = DGBaseState<dim,nstate,real,MeshType>::pde_physics_double->convective_flux (soln_at_q[iquad]);
+        conv_phys_flux_at_q[iquad] = DGBaseState<dim,nstate,real,MeshType>::pde_physics_double->convective_flux (soln_at_q[iquad], soln_grad_at_q[iquad]);
         diss_phys_flux_at_q[iquad] = DGBaseState<dim,nstate,real,MeshType>::pde_physics_double->dissipative_flux (soln_at_q[iquad], soln_grad_at_q[iquad], current_cell_index);
         if(this->pde_physics_double->has_nonzero_physical_source){
             physical_source_at_q.resize(n_quad_pts);
@@ -601,7 +601,7 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_explicit(
     const double cell_diameter = fe_values_vol.get_cell()->diameter();
     const unsigned int cell_index = fe_values_vol.get_cell()->active_cell_index();
     const unsigned int cell_degree = fe_values_vol.get_fe().tensor_degree();
-    this->max_dt_cell[cell_index] = DGBaseState<dim,nstate,real,MeshType>::evaluate_CFL ( soln_at_q, 0.0, cell_diameter, cell_degree);
+    this->max_dt_cell[cell_index] = DGBaseState<dim,nstate,real,MeshType>::evaluate_CFL ( soln_at_q, soln_grad_at_q, 0.0, cell_diameter, cell_degree);
 
 
     // Evaluate flux divergence by interpolating the flux
@@ -745,11 +745,11 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_boundary_term_explicit(
         // Changing it back to the standdard F* = F*(Uin, Ubc)
         // This is known not be adjoint consistent as per the paper above. Page 85, second to last paragraph.
         // Losing 2p+1 OOA on functionals for all PDEs.
-        conv_num_flux_dot_n[iquad] = DGBaseState<dim,nstate,real,MeshType>::conv_num_flux_fad->evaluate_flux(soln_int[iquad], soln_ext[iquad], normal_int);
+        conv_num_flux_dot_n[iquad] = DGBaseState<dim,nstate,real,MeshType>::conv_num_flux_fad->evaluate_flux(soln_int[iquad], soln_ext[iquad], soln_grad_int[iquad], soln_grad_ext[iquad], normal_int);
 
         // Used for strong form
         // Which physical convective flux to use?
-        conv_phys_flux[iquad] = this->pde_physics_fad->convective_flux (soln_int[iquad]);
+        conv_phys_flux[iquad] = this->pde_physics_fad->convective_flux (soln_int[iquad],soln_grad_int[iquad]);
 
         // Notice that the flux uses the solution given by the Dirichlet or Neumann boundary condition
         diss_soln_num_flux[iquad] = DGBaseState<dim,nstate,real,MeshType>::diss_num_flux_fad->evaluate_solution_flux(soln_ext[iquad], soln_ext[iquad], normal_int);
@@ -905,10 +905,10 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_face_term_explicit(
         // Evaluate physical convective flux, physical dissipative flux, and source term
 
         //std::cout <<"evaluating numerical fluxes" <<std::endl;
-        conv_num_flux_dot_n[iquad] = DGBaseState<dim,nstate,real,MeshType>::conv_num_flux_fad->evaluate_flux(soln_int[iquad], soln_ext[iquad], normal_int);
+        conv_num_flux_dot_n[iquad] = DGBaseState<dim,nstate,real,MeshType>::conv_num_flux_fad->evaluate_flux(soln_int[iquad], soln_ext[iquad], soln_grad_int[iquad], soln_grad_ext[iquad], normal_int);
 
-        conv_phys_flux_int[iquad] = this->pde_physics_fad->convective_flux (soln_int[iquad]);
-        conv_phys_flux_ext[iquad] = this->pde_physics_fad->convective_flux (soln_ext[iquad]);
+        conv_phys_flux_int[iquad] = this->pde_physics_fad->convective_flux (soln_int[iquad],soln_grad_int[iquad]);
+        conv_phys_flux_ext[iquad] = this->pde_physics_fad->convective_flux (soln_ext[iquad],soln_grad_ext[iquad]);
 
        // std::cout <<"done evaluating numerical fluxes" <<std::endl;
 

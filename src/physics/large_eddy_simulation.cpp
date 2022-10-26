@@ -66,7 +66,8 @@ real2 LargeEddySimulationBase<dim,nstate,real>
 template <int dim, int nstate, typename real>
 std::array<dealii::Tensor<1,dim,real>,nstate> LargeEddySimulationBase<dim,nstate,real>
 ::convective_flux (
-    const std::array<real,nstate> &/*conservative_soln*/) const
+    const std::array<real,nstate> &/*conservative_soln*/,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const
 {
     std::array<dealii::Tensor<1,dim,real>,nstate> conv_flux;
     for (int i=0; i<nstate; i++) {
@@ -139,6 +140,7 @@ template <int dim, int nstate, typename real>
 std::array<real,nstate> LargeEddySimulationBase<dim,nstate,real>
 ::convective_eigenvalues (
     const std::array<real,nstate> &/*conservative_soln*/,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/,
     const dealii::Tensor<1,dim,real> &/*normal*/) const
 {
     std::array<real,nstate> eig;
@@ -150,7 +152,8 @@ std::array<real,nstate> LargeEddySimulationBase<dim,nstate,real>
 //----------------------------------------------------------------
 template <int dim, int nstate, typename real>
 real LargeEddySimulationBase<dim,nstate,real>
-::max_convective_eigenvalue (const std::array<real,nstate> &/*conservative_soln*/) const
+::max_convective_eigenvalue (const std::array<real,nstate> &/*conservative_soln*/,
+                             const std::array<dealii::Tensor<1,dim,real>,nstate> &/*solution_gradient*/) const
 {
     const real max_eig = 0.0;
     return max_eig;
