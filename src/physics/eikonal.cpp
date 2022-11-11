@@ -58,16 +58,18 @@ template <int dim, int nstate, typename real>
 template <typename real2>
 std::array<dealii::Tensor<1,dim,real2>,nstate> Eikonal<dim,nstate,real>
 ::dissipative_flux_templated (
-    const std::array<real2,nstate> &conservative_soln,
+    const std::array<real2,nstate> &/*conservative_soln*/,
     const std::array<dealii::Tensor<1,dim,real2>,nstate> &solution_gradient,
     const dealii::types::global_dof_index cell_index) const
 {
     (void) cell_index;
+    //(void) conservative_soln;
     std::array<dealii::Tensor<1,dim,real2>,nstate> diss_flux;
 
     for (int flux_dim=0; flux_dim<nstate; ++flux_dim) {
         for (int d=0; d<dim; ++d){
-            diss_flux[flux_dim][d] = conservative_soln[flux_dim]*solution_gradient[flux_dim][d];
+            //diss_flux[flux_dim][d] = conservative_soln[flux_dim]*solution_gradient[flux_dim][d];
+            diss_flux[flux_dim][d] = solution_gradient[flux_dim][d];
         }
     }
 
@@ -87,12 +89,17 @@ std::array<real,nstate> Eikonal<dim,nstate,real>
     (void) cell_index;
     (void) solution_gradient;
     std::array<real,nstate> physical_source;
+    //for (int i=0; i<nstate; i++) {
+    //    physical_source[i] = 0.0;
+    //    for (int j=0;j<dim;j++){
+    //        physical_source[i] += solution_hessian[i][j][j];
+    //    }
+    //    physical_source[i] = 1.0+conservative_soln[i]*physical_source[i];
+    //}
+    (void) conservative_soln;
+    (void) solution_hessian;
     for (int i=0; i<nstate; i++) {
-        physical_source[i] = 0.0;
-        for (int j=0;j<dim;j++){
-            physical_source[i] += solution_hessian[i][j][j];
-        }
-        physical_source[i] = 1.0+conservative_soln[i]*physical_source[i];
+        physical_source[i] = -1.0;
     }
     return physical_source;
 }
@@ -464,13 +471,15 @@ real Eikonal<dim,nstate,real>
 template <int dim, int nstate, typename real>
 void Eikonal<dim,nstate,real>
 ::boundary_wall (
+   const std::array<real,nstate> &/*soln_int*/,
    const std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_int*/,
    std::array<real,nstate> &soln_bc,
-   std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
+   std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_bc*/) const
 {
     for (int istate=0; istate<nstate; ++istate) {
+        //soln_bc[istate] = -soln_int[istate];
         soln_bc[istate] = 0.0;
-        soln_grad_bc[istate] = 0.0;
+        //soln_grad_bc[istate] = 0.0;
         //soln_grad_bc[istate] = soln_grad_int[istate];
     }
 }
@@ -478,12 +487,15 @@ void Eikonal<dim,nstate,real>
 template <int dim, int nstate, typename real>
 void Eikonal<dim,nstate,real>
 ::boundary_farfield (
-   const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
+   const std::array<real,nstate> &/*soln_int*/,
+   const std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_int*/,
    std::array<real,nstate> &/*soln_bc*/,
    std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
 {
    for (int istate=0; istate<nstate; ++istate) {
-        soln_grad_bc[istate] = soln_grad_int[istate];
+        //soln_bc[istate] = 0.0;
+        soln_grad_bc[istate] = 0.0;
+        //soln_grad_bc[istate] = soln_grad_int[istate];
     }
 }
 //----------------------------------------------------------------
@@ -493,7 +505,7 @@ void Eikonal<dim,nstate,real>
    const int boundary_type,
    const dealii::Point<dim, real> &/*pos*/,
    const dealii::Tensor<1,dim,real> &/*normal_int*/,
-   const std::array<real,nstate> &/*soln_int*/,
+   const std::array<real,nstate> &soln_int,
    const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
    std::array<real,nstate> &soln_bc,
    std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
@@ -505,7 +517,7 @@ void Eikonal<dim,nstate,real>
     } 
     else if (boundary_type == 1001) {
         // Wall boundary condition 
-        boundary_wall (soln_grad_int,soln_bc,soln_grad_bc);
+        boundary_wall (soln_int,soln_grad_int,soln_bc,soln_grad_bc);
     } 
     else if (boundary_type == 1002) {
         // Pressure outflow boundary condition 
@@ -524,7 +536,7 @@ void Eikonal<dim,nstate,real>
     } 
     else if (boundary_type == 1005) {
         // Simple farfield boundary condition
-        boundary_farfield(soln_grad_int,soln_bc,soln_grad_bc);
+        boundary_farfield(soln_int,soln_grad_int,soln_bc,soln_grad_bc);
     } 
     else if (boundary_type == 1006) {
         // Slip wall boundary condition
@@ -538,22 +550,69 @@ void Eikonal<dim,nstate,real>
 }
 //----------------------------------------------------------------
 template <int dim, int nstate, typename real>
+dealii::Vector<double> Eikonal<dim,nstate,real>
+::post_compute_derived_quantities_scalar (
+    const double                &uh,
+    const dealii::Tensor<1,dim> &duh,
+    const dealii::Tensor<2,dim> &dduh,
+    const dealii::Tensor<1,dim> &normals,
+    const dealii::Point<dim>    &evaluation_points) const
+{
+    std::vector<std::string> names = post_get_names ();
+    dealii::Vector<double> computed_quantities = PhysicsBase<dim,nstate,real>::post_compute_derived_quantities_scalar ( uh, duh, dduh, normals, evaluation_points);
+    unsigned int current_data_index = computed_quantities.size() - 1;
+    computed_quantities.grow_or_shrink(names.size());
+    if constexpr (std::is_same<real,double>::value) {
+
+        double wall_distance;
+        double sum_grad_square=0.0;
+
+        for(int i=0;i<dim;++i){sum_grad_square+=duh[i]*duh[i];}
+        wall_distance=-sqrt(sum_grad_square)+sqrt(sum_grad_square+2.0*uh);
+
+        computed_quantities(++current_data_index) = wall_distance;
+    }
+    if (computed_quantities.size()-1 != current_data_index) {
+        std::cout << " Did not assign a value to all the data. Missing " << computed_quantities.size() - current_data_index << " variables."
+                  << " If you added a new output variable, make sure the names and DataComponentInterpretation match the above. "
+                  << std::endl;
+    }
+
+    return computed_quantities;
+}
+//----------------------------------------------------------------
+template <int dim, int nstate, typename real>
 std::vector<std::string> Eikonal<dim,nstate,real>
 ::post_get_names () const
 {
-    std::vector<std::string> names;
-    for (unsigned int s=0; s<nstate; ++s) {
-        names.push_back("minimum_wall_distance");
-    }
+    std::vector<std::string> names = PhysicsBase<dim,nstate,real>::post_get_names ();
+    names.push_back ("wall_distance");
+
     return names;
+}
+//----------------------------------------------------------------
+template <int dim, int nstate, typename real>
+std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation> Eikonal<dim,nstate,real>
+::post_get_data_component_interpretation () const
+{
+    namespace DCI = dealii::DataComponentInterpretation;
+    std::vector<DCI::DataComponentInterpretation> interpretation = PhysicsBase<dim,nstate,real>::post_get_data_component_interpretation (); // state variables
+    interpretation.push_back (DCI::component_is_scalar);
+
+    std::vector<std::string> names = this->post_get_names();
+    if (names.size() != interpretation.size()) {
+        std::cout << "Number of DataComponentInterpretation is not the same as number of names for output file" << std::endl;
+    }
+
+    return interpretation;
 }
 //----------------------------------------------------------------
 template <int dim, int nstate, typename real>
 dealii::UpdateFlags Eikonal<dim,nstate,real>
 ::post_get_needed_update_flags () const
 {
-    //return update_values | update_gradients;
     return dealii::update_values
+           | dealii::update_gradients
            | dealii::update_quadrature_points
            ;
 }

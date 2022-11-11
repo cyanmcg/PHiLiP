@@ -115,11 +115,22 @@ public:
         std::array<real,nstate> &/*soln_bc*/,
         std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_bc*/) const;
     
+    /// For post processing purposes
+    dealii::Vector<double> post_compute_derived_quantities_scalar (
+        const double                &uh,
+        const dealii::Tensor<1,dim> &duh,
+        const dealii::Tensor<2,dim> &dduh,
+        const dealii::Tensor<1,dim> &normals,
+        const dealii::Point<dim>    &evaluation_points) const;
+
     /// For post processing purposes, sets the base names (with no prefix or suffix) of the computed quantities
-    std::vector<std::string> post_get_names () const override;
+    std::vector<std::string> post_get_names () const;
+
+    /// For post processing purposes, sets the interpretation of each computed quantity as either scalar or vector
+    std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation> post_get_data_component_interpretation () const;
     
     /// For post processing purposes (update comment later)
-    dealii::UpdateFlags post_get_needed_update_flags () const override;
+    dealii::UpdateFlags post_get_needed_update_flags () const;
 
 protected:
     template <typename real2>
@@ -148,12 +159,14 @@ protected:
 
     /// Wall boundary condition
     void boundary_wall (
+        const std::array<real,nstate> &soln_int,
         const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
         std::array<real,nstate> &soln_bc,
         std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const;
 
     /// Farfield boundary conditions 
     void boundary_farfield (
+        const std::array<real,nstate> &soln_int,
         const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
         std::array<real,nstate> &soln_bc,
         std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const;

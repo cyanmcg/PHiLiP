@@ -1465,6 +1465,7 @@ void DGWeak<dim,nstate,real,MeshType>::assemble_boundary_term(
         conv_num_flux_dot_n[iquad] = conv_num_flux.evaluate_flux(soln_int[iquad], soln_ext[iquad], normal_int);
         // Notice that the flux uses the solution given by the Dirichlet or Neumann boundary condition
         diss_soln_num_flux[iquad] = diss_num_flux.evaluate_solution_flux(soln_ext[iquad], soln_ext[iquad], normal_int);
+        //diss_soln_num_flux[iquad] = diss_num_flux.evaluate_solution_flux(soln_int[iquad], soln_ext[iquad], normal_int);
 
         ADArrayTensor1 diss_soln_jump_int;
         for (int s=0; s<nstate; s++) {
