@@ -166,6 +166,7 @@ protected:
 
     /// Farfield boundary conditions 
     void boundary_farfield (
+        const dealii::Point<dim, real> &pos,
         const std::array<real,nstate> &soln_int,
         const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
         std::array<real,nstate> &soln_bc,

@@ -44,18 +44,65 @@ void straight_bounded_cube(std::shared_ptr<TriangulationType> &grid,
     //    }
     //}
 
-    for (auto cell = grid->begin_active(); cell != grid->end(); ++cell) {
-            for (unsigned int face=0; face<dealii::GeometryInfo<dim>::faces_per_cell; ++face) {
-                // all faces are wall BC
-                if (cell->face(face)->at_boundary()) cell->face(face)->set_boundary_id (1001);
+    //for (auto cell = grid->begin_active(); cell != grid->end(); ++cell) {
+    //        for (unsigned int face=0; face<dealii::GeometryInfo<dim>::faces_per_cell; ++face) {
+    //            // all faces are wall BC
+    //            if (cell->face(face)->at_boundary()) cell->face(face)->set_boundary_id (1001);
 
-                // specify BC to different faces
-                //if (cell->face(face)->at_boundary()) {
-                //    unsigned int current_id = cell->face(face)->boundary_id();
-                //    if (current_id == 0 || current_id == 1 || current_id == 2) cell->face(face)->set_boundary_id (1001); // Bottom and top wall
-                //    if (current_id == 3) cell->face(face)->set_boundary_id (1005); // farfield
-                //}
+    //            // specify BC to different faces
+    //            //if (cell->face(face)->at_boundary()) {
+    //            //    unsigned int current_id = cell->face(face)->boundary_id();
+    //            //    if (current_id == 0 || current_id == 1 || current_id == 2) cell->face(face)->set_boundary_id (1001); // Bottom and top wall
+    //            //    if (current_id == 3) cell->face(face)->set_boundary_id (1005); // farfield
+    //            //}
+    //        }
+    //}
+
+    //if constexpr(dim==2) {
+    //    const int number_of_refinements = log(number_of_cells_per_direction)/log(2);
+    //
+    //    dealii::Point<2,double> centre;
+    //    centre[0] = 0.0;
+    //    centre[1] = 0.0;
+    //    const bool colorize = true;
+    //    dealii::GridGenerator::hyper_shell(*grid, centre, domain_left, domain_right, 10, colorize);
+    //    grid->refine_global(number_of_refinements);
+    //    for (auto cell = grid->begin_active(); cell != grid->end(); ++cell) {
+    //        for (unsigned int face=0; face<dealii::GeometryInfo<dim>::faces_per_cell; ++face) {
+    //            if (cell->face(face)->at_boundary()) {
+    //                unsigned int current_id = cell->face(face)->boundary_id();
+    //                if (current_id == 0) cell->face(face)->set_boundary_id (1001);
+    //                if (current_id == 1) cell->face(face)->set_boundary_id (1005);
+    //            }
+    //        }
+    //        
+    //    }
+    //}
+
+    if constexpr(dim==2) {
+        const int number_of_refinements = log(number_of_cells_per_direction)/log(2);
+    
+        dealii::Point<2,double> centre;
+        centre[0] = 0.0;
+        centre[1] = 0.0;
+        const bool colorize = true;
+        dealii::GridGenerator::plate_with_a_hole(*grid, domain_left,domain_right, 2.0,2.0, 2.0,2.0, centre, 0, 1, 1.0, 2, colorize);
+        grid->refine_global(number_of_refinements);
+        for (auto cell = grid->begin_active(); cell != grid->end(); ++cell) {
+            for (unsigned int face=0; face<dealii::GeometryInfo<dim>::faces_per_cell; ++face) {
+                if (cell->face(face)->at_boundary()) {
+                    unsigned int current_id = cell->face(face)->boundary_id();
+                    if (current_id == 0) cell->face(face)->set_boundary_id (1001);
+                    if (current_id == 1) cell->face(face)->set_boundary_id (1001);
+                    if (current_id == 2) cell->face(face)->set_boundary_id (1001);
+                    if (current_id == 3) cell->face(face)->set_boundary_id (1001);
+                    if (current_id == 4) cell->face(face)->set_boundary_id (1001);
+                }
             }
+            
+        }
+
+
     }
 }
 

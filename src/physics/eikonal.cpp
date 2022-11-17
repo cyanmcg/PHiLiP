@@ -487,14 +487,24 @@ void Eikonal<dim,nstate,real>
 template <int dim, int nstate, typename real>
 void Eikonal<dim,nstate,real>
 ::boundary_farfield (
+   const dealii::Point<dim, real> &/*pos*/,
    const std::array<real,nstate> &/*soln_int*/,
    const std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_int*/,
-   std::array<real,nstate> &/*soln_bc*/,
-   std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
+   std::array<real,nstate> &soln_bc,
+   std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_bc*/) const
 {
+   //dealii::Point<2, real> target_pos;
+   //target_pos[0]=0.0;
+   //target_pos[1]=0.5;
+   //real distance_to_target=0.0;
+   //for (int i=0;i<dim;++i){
+   //     distance_to_target += (pos[i]-target_pos[i])*(pos[i]-target_pos[i]);
+   // }
+   //distance_to_target = sqrt(distance_to_target);
    for (int istate=0; istate<nstate; ++istate) {
-        //soln_bc[istate] = 0.0;
-        soln_grad_bc[istate] = 0.0;
+        //soln_bc[istate] = distance_to_target;
+        soln_bc[istate] = 0.0;
+        //soln_bc[istate] = soln_int[istate];
         //soln_grad_bc[istate] = soln_grad_int[istate];
     }
 }
@@ -503,7 +513,7 @@ template <int dim, int nstate, typename real>
 void Eikonal<dim,nstate,real>
 ::boundary_face_values (
    const int boundary_type,
-   const dealii::Point<dim, real> &/*pos*/,
+   const dealii::Point<dim, real> &pos,
    const dealii::Tensor<1,dim,real> &/*normal_int*/,
    const std::array<real,nstate> &soln_int,
    const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
@@ -531,12 +541,13 @@ void Eikonal<dim,nstate,real>
     } 
     else if (boundary_type == 1004) {
         // Riemann-based farfield boundary condition
-        std::cout << "Riemann boundary condition is not implemented!" << std::endl;
-        std::abort();
+        //std::cout << "Riemann boundary condition is not implemented!" << std::endl;
+        //std::abort();
+        boundary_farfield(pos,soln_int,soln_grad_int,soln_bc,soln_grad_bc);
     } 
     else if (boundary_type == 1005) {
         // Simple farfield boundary condition
-        boundary_farfield(soln_int,soln_grad_int,soln_bc,soln_grad_bc);
+        boundary_farfield(pos,soln_int,soln_grad_int,soln_bc,soln_grad_bc);
     } 
     else if (boundary_type == 1006) {
         // Slip wall boundary condition

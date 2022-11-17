@@ -263,13 +263,13 @@ real InitialConditionFunction_DistanceTarget<dim, nstate, real> :: value(const d
     //}
     //return sqrt(distance_to_origin);
     dealii::Point<dim,real> target;
-    target[0] = 0.5;
-    target[1] = 0.5;
+    target[0] = 0.0;
+    target[1] = 0.0;
     real distance_to_target = 0.0;
     for (int i=0;i<dim;++i){
         distance_to_target += (point[i]-target[i])*(point[i]-target[i]);
     }
-    return -sqrt(distance_to_target)+0.8;
+    return sqrt(distance_to_target);
 }
 
 template class InitialConditionFunction <PHILIP_DIM, 1, double>;

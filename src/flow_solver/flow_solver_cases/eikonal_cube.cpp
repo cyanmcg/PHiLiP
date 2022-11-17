@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <iostream>
 #include "mesh/grids/straight_bounded_cube.hpp"
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_tools.h>
+#include "mesh/grids/naca_airfoil_grid.hpp"
 
 namespace PHiLiP {
 
@@ -27,8 +30,65 @@ std::shared_ptr<Triangulation> EikonalCube<dim,nstate>::generate_grid() const
             this->mpi_communicator
 #endif
     );
-    Grids::straight_bounded_cube<dim,Triangulation>(grid, domain_left, domain_right, number_of_cells_per_direction);
+    //Grids::straight_bounded_cube<dim,Triangulation>(grid, domain_left, domain_right, number_of_cells_per_direction);
 
+#if PHILIP_DIM==2
+    dealii::GridGenerator::Airfoil::AdditionalData airfoil_data;
+    airfoil_data.airfoil_type = "NACA";
+    airfoil_data.naca_id      = "0012";
+    airfoil_data.airfoil_length = 1.0;
+    airfoil_data.height         = 100.0;
+    airfoil_data.length_b2      = 100.0;
+    airfoil_data.incline_factor = 0.0;
+    airfoil_data.bias_factor    = 4; // default good enough?
+    airfoil_data.refinements    = 0;
+
+    const int n_subdivisions_0 = 80;
+    const int n_subdivisions_1 = 60;
+    const int n_cells_airfoil = n_subdivisions_0 * 2 / 3;
+    const int n_cells_downstream = n_subdivisions_0 - n_cells_airfoil;
+    airfoil_data.n_subdivision_x_0 = n_cells_airfoil;
+    airfoil_data.n_subdivision_x_1 = n_cells_airfoil / 10;
+    airfoil_data.n_subdivision_x_2 = n_cells_downstream;
+    airfoil_data.n_subdivision_y = n_subdivisions_1;
+    airfoil_data.airfoil_sampling_factor = 3; // default 2
+
+    //Grids::naca_airfoil(*grid,airfoil_data);
+    dealii::GridGenerator::Airfoil::create_triangulation(*grid, airfoil_data);
+    grid->refine_global();
+    // Assign a manifold to have curved geometry
+    unsigned int manifold_id = 0;
+    grid->reset_all_manifolds();
+    grid->set_all_manifold_ids(manifold_id);
+    // // Set Flat manifold on the domain, but not on the boundary.
+    grid->set_manifold(manifold_id, dealii::FlatManifold<2>());
+
+    manifold_id = 1;
+    bool is_upper = true;
+    const Grids::NACAManifold<2,1> upper_naca(airfoil_data.naca_id, is_upper);
+    grid->set_all_manifold_ids_on_boundary(2,manifold_id); // upper airfoil side
+    grid->set_manifold(manifold_id, upper_naca);
+
+    is_upper = false;
+    const Grids::NACAManifold<2,1> lower_naca(airfoil_data.naca_id, is_upper);
+    manifold_id = 2;
+    grid->set_all_manifold_ids_on_boundary(3,manifold_id); // lower airfoil side
+    grid->set_manifold(manifold_id, lower_naca); 
+
+    // Set boundary type and design type
+    for (typename dealii::parallel::distributed::Triangulation<2>::active_cell_iterator cell = grid->begin_active(); cell != grid->end(); ++cell) {
+        for (unsigned int face=0; face<dealii::GeometryInfo<2>::faces_per_cell; ++face) {
+            if (cell->face(face)->at_boundary()) {
+                unsigned int current_id = cell->face(face)->boundary_id();
+                if (current_id == 0 || current_id == 1 || current_id == 4 || current_id == 5) {
+                    cell->face(face)->set_boundary_id (1004); // farfield
+                } else {
+                    cell->face(face)->set_boundary_id (1001); // wall bc
+                }
+            }
+        }
+    }
+#endif
     return grid;
 }
 

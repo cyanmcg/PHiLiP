@@ -66,6 +66,7 @@ FlowSolverFactory<dim,nstate>
     } else if (flow_type == FlowCaseEnum::eikonal_wall){
         if constexpr (dim==2 && nstate==1){
             std::shared_ptr<FlowSolverCaseBase<dim, nstate>> flow_solver_case = std::make_shared<EikonalCube<dim, nstate>>(parameters_input);
+            //std::shared_ptr<FlowSolverCaseBase<dim, nstate>> flow_solver_case = std::make_shared<NACA0012<dim,nstate>>(parameters_input);
             return std::make_unique<FlowSolver<dim, nstate>>(parameters_input, flow_solver_case, parameter_handler_input);
         }
     } else {
