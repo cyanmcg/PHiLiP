@@ -37,25 +37,25 @@ std::shared_ptr<Triangulation> EikonalCube<dim,nstate>::generate_grid() const
     airfoil_data.airfoil_type = "NACA";
     airfoil_data.naca_id      = "0012";
     airfoil_data.airfoil_length = 1.0;
-    airfoil_data.height         = 100.0;
-    airfoil_data.length_b2      = 100.0;
+    airfoil_data.height         = 2.0;
+    airfoil_data.length_b2      = 2.0;
     airfoil_data.incline_factor = 0.0;
-    airfoil_data.bias_factor    = 4; // default good enough?
+    airfoil_data.bias_factor    = 1; // default good enough?
     airfoil_data.refinements    = 0;
 
-    const int n_subdivisions_0 = 80;
-    const int n_subdivisions_1 = 60;
-    const int n_cells_airfoil = n_subdivisions_0 * 2 / 3;
-    const int n_cells_downstream = n_subdivisions_0 - n_cells_airfoil;
+    const int n_subdivisions_0 = 40;
+    const int n_subdivisions_1 = 30;
+    const int n_cells_airfoil = n_subdivisions_0;
+    const int n_cells_downstream = n_subdivisions_0/2;
     airfoil_data.n_subdivision_x_0 = n_cells_airfoil;
-    airfoil_data.n_subdivision_x_1 = n_cells_airfoil / 10;
+    airfoil_data.n_subdivision_x_1 = n_cells_airfoil / 20;
     airfoil_data.n_subdivision_x_2 = n_cells_downstream;
     airfoil_data.n_subdivision_y = n_subdivisions_1;
     airfoil_data.airfoil_sampling_factor = 3; // default 2
 
     //Grids::naca_airfoil(*grid,airfoil_data);
     dealii::GridGenerator::Airfoil::create_triangulation(*grid, airfoil_data);
-    grid->refine_global();
+    //grid->refine_global();
     // Assign a manifold to have curved geometry
     unsigned int manifold_id = 0;
     grid->reset_all_manifolds();

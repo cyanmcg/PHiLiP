@@ -75,19 +75,20 @@ void NACA0012<dim,nstate>::set_higher_order_grid(std::shared_ptr<DGBase<dim, dou
 }
 
 template <int dim, int nstate>
-void NACA0012<dim,nstate>::steady_state_postprocessing(std::shared_ptr<DGBase<dim, double>> dg) const
+void NACA0012<dim,nstate>::steady_state_postprocessing(std::shared_ptr<DGBase<dim, double>> /*dg*/) const
 {
-    LiftDragFunctional<dim,dim+2,double> lift_functional(dg, LiftDragFunctional<dim,dim+2,double>::Functional_types::lift);
-    double lift = lift_functional.evaluate_functional();
+    //LiftDragFunctional<dim,dim+2,double> lift_functional(dg, LiftDragFunctional<dim,dim+2,double>::Functional_types::lift);
+    //double lift = lift_functional.evaluate_functional();
 
-    LiftDragFunctional<dim,dim+2,double> drag_functional(dg, LiftDragFunctional<dim,dim+2,double>::Functional_types::drag);
-    double drag = drag_functional.evaluate_functional();
+    //LiftDragFunctional<dim,dim+2,double> drag_functional(dg, LiftDragFunctional<dim,dim+2,double>::Functional_types::drag);
+    //double drag = drag_functional.evaluate_functional();
 
-    this->pcout << " Resulting lift : " << lift << std::endl;
-    this->pcout << " Resulting drag : " << drag << std::endl;
+    //this->pcout << " Resulting lift : " << lift << std::endl;
+    //this->pcout << " Resulting drag : " << drag << std::endl;
 }
 
 #if PHILIP_DIM==2
+    template class NACA0012<PHILIP_DIM,1>;
     template class NACA0012<PHILIP_DIM,PHILIP_DIM+2>;
 #endif
 

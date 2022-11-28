@@ -66,10 +66,35 @@ std::array<dealii::Tensor<1,dim,real2>,nstate> Eikonal<dim,nstate,real>
     //(void) conservative_soln;
     std::array<dealii::Tensor<1,dim,real2>,nstate> diss_flux;
 
+    real2 p_poisson_factor;
+    if constexpr(std::is_same<real2,real>::value){
+        const real factor_p = 4.0;
+        const real const_two = 2.0;
+        real sum_grad_square = 0.0;
+        for(int i=0;i<dim;++i){
+            sum_grad_square+=solution_gradient[0][i]*solution_gradient[0][i];
+        }
+        p_poisson_factor = pow(sum_grad_square,(factor_p-const_two)/const_two);
+    }
+    else if constexpr(std::is_same<real2,FadType>::value){
+        const FadType factor_p = 4.0;
+        const FadType const_two_fad = 2.0;
+        FadType sum_grad_square = 0.0;
+        for(int i=0;i<dim;++i){
+            sum_grad_square+=solution_gradient[0][i]*solution_gradient[0][i];
+        }
+        p_poisson_factor = pow(sum_grad_square,(factor_p-const_two_fad)/const_two_fad);
+    }
+    else{
+        std::cout << "ERROR in physics/reynolds_averaged_navier_stokes.cpp --> compute_effective_viscosity_turbulence_model_templated(): real2 != real or FadType" << std::endl;
+        std::abort();
+    }
+
     for (int flux_dim=0; flux_dim<nstate; ++flux_dim) {
         for (int d=0; d<dim; ++d){
             //diss_flux[flux_dim][d] = conservative_soln[flux_dim]*solution_gradient[flux_dim][d];
-            diss_flux[flux_dim][d] = solution_gradient[flux_dim][d];
+            //diss_flux[flux_dim][d] = solution_gradient[flux_dim][d];
+            diss_flux[flux_dim][d] = (p_poisson_factor+0.5)*solution_gradient[flux_dim][d];
         }
     }
 
@@ -488,14 +513,14 @@ template <int dim, int nstate, typename real>
 void Eikonal<dim,nstate,real>
 ::boundary_farfield (
    const dealii::Point<dim, real> &/*pos*/,
-   const std::array<real,nstate> &/*soln_int*/,
+   const std::array<real,nstate> &soln_int,
    const std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_int*/,
    std::array<real,nstate> &soln_bc,
    std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_bc*/) const
 {
    //dealii::Point<2, real> target_pos;
-   //target_pos[0]=0.0;
-   //target_pos[1]=0.5;
+   //target_pos[0]=0.5;
+   //target_pos[1]=0.0;
    //real distance_to_target=0.0;
    //for (int i=0;i<dim;++i){
    //     distance_to_target += (pos[i]-target_pos[i])*(pos[i]-target_pos[i]);
@@ -503,8 +528,12 @@ void Eikonal<dim,nstate,real>
    //distance_to_target = sqrt(distance_to_target);
    for (int istate=0; istate<nstate; ++istate) {
         //soln_bc[istate] = distance_to_target;
-        soln_bc[istate] = 0.0;
-        //soln_bc[istate] = soln_int[istate];
+        //soln_bc[istate] = 0.0;
+        //if(pos[0]==3.0){
+        //    soln_bc[istate] = distance_to_target;
+        //}else{
+          soln_bc[istate] = soln_int[istate];
+        //}
         //soln_grad_bc[istate] = soln_grad_int[istate];
     }
 }
@@ -575,13 +604,39 @@ dealii::Vector<double> Eikonal<dim,nstate,real>
     computed_quantities.grow_or_shrink(names.size());
     if constexpr (std::is_same<real,double>::value) {
 
-        double wall_distance;
+        double wall_distance_0;
+        double wall_distance_1;
+        double wall_distance_2;
+        double wall_distance_3;
+        double wall_distance_4;
         double sum_grad_square=0.0;
+        double sum_grad_absolute=0.0;
+        const double p_poisson_factor=4.0;
 
-        for(int i=0;i<dim;++i){sum_grad_square+=duh[i]*duh[i];}
-        wall_distance=-sqrt(sum_grad_square)+sqrt(sum_grad_square+2.0*uh);
+        for(int i=0;i<dim;++i){
+            sum_grad_square+=duh[i]*duh[i];
+            sum_grad_absolute+=std::abs(duh[i]);
+        }
+        wall_distance_0=sqrt(sum_grad_square)+sqrt(sum_grad_square+2.0*uh);
 
-        computed_quantities(++current_data_index) = wall_distance;
+        wall_distance_1=-sqrt(sum_grad_square)+sqrt(sum_grad_square+2.0*uh);
+
+        wall_distance_2=-(sum_grad_absolute)+sqrt(sum_grad_absolute*sum_grad_absolute+2.0*uh);
+
+        wall_distance_3=-(sum_grad_absolute)-sqrt(sum_grad_absolute*sum_grad_absolute+2.0*uh);
+
+        wall_distance_4=pow(p_poisson_factor/(p_poisson_factor-1.0)*uh+pow(sum_grad_square,p_poisson_factor/2.0),(p_poisson_factor-1.0)/p_poisson_factor)-pow(sum_grad_square,(p_poisson_factor-1.0)/2.0);
+
+
+        computed_quantities(++current_data_index) = wall_distance_0;
+
+        computed_quantities(++current_data_index) = wall_distance_1;
+
+        computed_quantities(++current_data_index) = wall_distance_2;
+
+        computed_quantities(++current_data_index) = wall_distance_3;
+
+        computed_quantities(++current_data_index) = wall_distance_4;
     }
     if (computed_quantities.size()-1 != current_data_index) {
         std::cout << " Did not assign a value to all the data. Missing " << computed_quantities.size() - current_data_index << " variables."
@@ -597,7 +652,11 @@ std::vector<std::string> Eikonal<dim,nstate,real>
 ::post_get_names () const
 {
     std::vector<std::string> names = PhysicsBase<dim,nstate,real>::post_get_names ();
-    names.push_back ("wall_distance");
+    names.push_back ("wall_distance_0");
+    names.push_back ("wall_distance_1");
+    names.push_back ("wall_distance_2");
+    names.push_back ("wall_distance_3");
+    names.push_back ("wall_distance_4");
 
     return names;
 }
@@ -608,6 +667,10 @@ std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation> Ei
 {
     namespace DCI = dealii::DataComponentInterpretation;
     std::vector<DCI::DataComponentInterpretation> interpretation = PhysicsBase<dim,nstate,real>::post_get_data_component_interpretation (); // state variables
+    interpretation.push_back (DCI::component_is_scalar);
+    interpretation.push_back (DCI::component_is_scalar);
+    interpretation.push_back (DCI::component_is_scalar);
+    interpretation.push_back (DCI::component_is_scalar);
     interpretation.push_back (DCI::component_is_scalar);
 
     std::vector<std::string> names = this->post_get_names();

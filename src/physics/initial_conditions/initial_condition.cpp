@@ -263,7 +263,7 @@ real InitialConditionFunction_DistanceTarget<dim, nstate, real> :: value(const d
     //}
     //return sqrt(distance_to_origin);
     dealii::Point<dim,real> target;
-    target[0] = 0.0;
+    target[0] = 0.5;
     target[1] = 0.0;
     real distance_to_target = 0.0;
     for (int i=0;i<dim;++i){
