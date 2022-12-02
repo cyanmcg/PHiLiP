@@ -164,6 +164,13 @@ protected:
         std::array<real,nstate> &soln_bc,
         std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const;
 
+    /// Symmetric boundary condition
+    void boundary_symmetric (
+        const std::array<real,nstate> &soln_int,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
+        std::array<real,nstate> &soln_bc,
+        std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const;
+
     /// Farfield boundary conditions 
     void boundary_farfield (
         const dealii::Point<dim, real> &pos,

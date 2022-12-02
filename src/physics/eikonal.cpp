@@ -68,7 +68,7 @@ std::array<dealii::Tensor<1,dim,real2>,nstate> Eikonal<dim,nstate,real>
 
     real2 p_poisson_factor;
     if constexpr(std::is_same<real2,real>::value){
-        const real factor_p = 4.0;
+        const real factor_p = 2.0;
         const real const_two = 2.0;
         real sum_grad_square = 0.0;
         for(int i=0;i<dim;++i){
@@ -77,7 +77,7 @@ std::array<dealii::Tensor<1,dim,real2>,nstate> Eikonal<dim,nstate,real>
         p_poisson_factor = pow(sum_grad_square,(factor_p-const_two)/const_two);
     }
     else if constexpr(std::is_same<real2,FadType>::value){
-        const FadType factor_p = 4.0;
+        const FadType factor_p = 2.0;
         const FadType const_two_fad = 2.0;
         FadType sum_grad_square = 0.0;
         for(int i=0;i<dim;++i){
@@ -94,7 +94,7 @@ std::array<dealii::Tensor<1,dim,real2>,nstate> Eikonal<dim,nstate,real>
         for (int d=0; d<dim; ++d){
             //diss_flux[flux_dim][d] = conservative_soln[flux_dim]*solution_gradient[flux_dim][d];
             //diss_flux[flux_dim][d] = solution_gradient[flux_dim][d];
-            diss_flux[flux_dim][d] = (p_poisson_factor+0.5)*solution_gradient[flux_dim][d];
+            diss_flux[flux_dim][d] = (p_poisson_factor)*solution_gradient[flux_dim][d];
         }
     }
 
@@ -497,15 +497,15 @@ template <int dim, int nstate, typename real>
 void Eikonal<dim,nstate,real>
 ::boundary_wall (
    const std::array<real,nstate> &/*soln_int*/,
-   const std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_int*/,
+   const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
    std::array<real,nstate> &soln_bc,
-   std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_bc*/) const
+   std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
 {
     for (int istate=0; istate<nstate; ++istate) {
         //soln_bc[istate] = -soln_int[istate];
         soln_bc[istate] = 0.0;
         //soln_grad_bc[istate] = 0.0;
-        //soln_grad_bc[istate] = soln_grad_int[istate];
+        soln_grad_bc[istate] = soln_grad_int[istate];
     }
 }
 //----------------------------------------------------------------
@@ -534,6 +534,22 @@ void Eikonal<dim,nstate,real>
         //}else{
           soln_bc[istate] = soln_int[istate];
         //}
+        //soln_grad_bc[istate] = soln_grad_int[istate];
+    }
+}
+//----------------------------------------------------------------
+template <int dim, int nstate, typename real>
+void Eikonal<dim,nstate,real>
+::boundary_symmetric (
+   const std::array<real,nstate> &soln_int,
+   const std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_int*/,
+   std::array<real,nstate> &soln_bc,
+   std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_bc*/) const
+{
+    for (int istate=0; istate<nstate; ++istate) {
+        soln_bc[istate] = soln_int[istate];
+        //soln_bc[istate] = 0.0;
+        //soln_grad_bc[istate] = 0.0;
         //soln_grad_bc[istate] = soln_grad_int[istate];
     }
 }
@@ -582,7 +598,11 @@ void Eikonal<dim,nstate,real>
         // Slip wall boundary condition
         std::cout << "Slip wall boundary condition is not implemented!" << std::endl;
         std::abort();
-    } 
+    }
+    else if (boundary_type == 1007) {
+        // Symmetric boundary condition
+        boundary_symmetric(soln_int,soln_grad_int,soln_bc,soln_grad_bc);
+    }  
     else {
         std::cout << "Invalid boundary_type: " << boundary_type << std::endl;
         std::abort();
@@ -611,7 +631,7 @@ dealii::Vector<double> Eikonal<dim,nstate,real>
         double wall_distance_4;
         double sum_grad_square=0.0;
         double sum_grad_absolute=0.0;
-        const double p_poisson_factor=4.0;
+        const double p_poisson_factor=2.0;
 
         for(int i=0;i<dim;++i){
             sum_grad_square+=duh[i]*duh[i];

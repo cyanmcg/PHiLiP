@@ -102,6 +102,37 @@ void straight_bounded_cube(std::shared_ptr<TriangulationType> &grid,
             
         }
     }
+
+    //if constexpr(dim==2) {
+    //    const int number_of_refinements = log(number_of_cells_per_direction)/log(2);
+    //
+    //    dealii::Point<2,double> left_corner,right_corner;
+    //    left_corner[0] = -0.5;
+    //    left_corner[1] = 0.0;
+    //    right_corner[0] = 1.0;
+    //    right_corner[1] = 1.0;
+    //    const bool colorize = true;
+    //    dealii::GridGenerator::hyper_rectangle(*grid, left_corner, right_corner, colorize);
+    //    grid->refine_global(number_of_refinements);
+    //    for (auto cell = grid->begin_active(); cell != grid->end(); ++cell) {
+    //        for (unsigned int face=0; face<dealii::GeometryInfo<dim>::faces_per_cell; ++face) {
+    //            if (cell->face(face)->at_boundary()) {
+    //                unsigned int current_id = cell->face(face)->boundary_id();
+    //                if (current_id == 0) cell->face(face)->set_boundary_id (1005);
+    //                if (current_id == 1) cell->face(face)->set_boundary_id (1005);
+    //                if (current_id == 2) {
+    //                    if (cell->face(face)->center()[0]<=0.0){
+    //                        cell->face(face)->set_boundary_id (1007);
+    //                    }else{
+    //                        cell->face(face)->set_boundary_id (1001);
+    //                    }
+    //                }
+    //                if (current_id == 3) cell->face(face)->set_boundary_id (1005);
+    //            }
+    //        }
+    //        
+    //    }
+    //}
 }
 
 #if PHILIP_DIM==1
